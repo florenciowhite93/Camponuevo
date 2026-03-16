@@ -1,5 +1,17 @@
 {
-  "build": {
-    "outputDirectory": "."
-  }
+  "name": "camponuevo",
+  "version": 1,
+  "public": true,
+  "builds": [
+    {
+      "use": "@vercel/static",
+      "src": "**/*"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
 }
