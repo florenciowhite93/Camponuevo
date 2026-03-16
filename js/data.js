@@ -9033,6 +9033,59 @@ function saveProduct(product) {
     }
     
     localStorage.setItem('camponuevo_products', JSON.stringify(products));
+    
+    // Also save to Supabase in background
+    saveProductToSupabase(product);
+}
+
+async function saveProductToSupabase(product) {
+    if (!isSupabaseAvailable()) {
+        console.log('Supabase not available, product saved locally only');
+        return;
+    }
+    try {
+        const productData = {
+            id: product.id,
+            title: product.title,
+            price: product.price,
+            laboratory: product.laboratory || '',
+            description: product.description || '',
+            subcategory: product.subCategory || product.subcategory || '',
+            subcategories: product.subCategories || product.subcategories || [],
+            animalbreeds: product.animalBreeds || product.animalbreeds || [],
+            volume: product.volumeWeight || product.volume || '',
+            image: product.image || '',
+            drugs: product.drugs || [],
+            dose: product.dose || '',
+            externallink: product.externalLink || product.externallink || ''
+        };
+        
+        // Check if product exists in Supabase
+        const { data: existing } = await window.supabase
+            .from('products')
+            .select('id')
+            .eq('id', product.id)
+            .single();
+        
+        if (existing) {
+            // Update
+            const { error } = await window.supabase
+                .from('products')
+                .update(productData)
+                .eq('id', product.id);
+            if (error) throw error;
+            console.log('Product updated in Supabase:', product.title);
+        } else {
+            // Insert
+            const { error } = await window.supabase
+                .from('products')
+                .insert([productData]);
+            if (error) throw error;
+            console.log('Product saved to Supabase:', product.title);
+        }
+    } catch (err) {
+        console.error('Error saving product to Supabase:', err.message);
+    }
 }
 
 // Delete a product
@@ -9040,6 +9093,23 @@ function deleteProduct(id) {
     let products = getProducts();
     products = products.filter(p => p.id !== id);
     localStorage.setItem('camponuevo_products', JSON.stringify(products));
+    
+    // Also delete from Supabase
+    deleteProductFromSupabase(id);
+}
+
+async function deleteProductFromSupabase(id) {
+    if (!isSupabaseAvailable()) return;
+    try {
+        const { error } = await window.supabase
+            .from('products')
+            .delete()
+            .eq('id', id);
+        if (error) throw error;
+        console.log('Product deleted from Supabase:', id);
+    } catch (err) {
+        console.error('Error deleting product from Supabase:', err.message);
+    }
 }
 
 // --- Sub-categories Management ---
