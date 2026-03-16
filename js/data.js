@@ -9039,6 +9039,11 @@ function saveProduct(product) {
 }
 
 async function saveProductToSupabase(product) {
+    console.log('=== saveProductToSupabase called ===');
+    console.log('Product:', product);
+    console.log('isSupabaseAvailable:', isSupabaseAvailable());
+    console.log('window.supabase:', window.supabase);
+    
     if (!isSupabaseAvailable()) {
         console.log('Supabase not available, product saved locally only');
         return;
