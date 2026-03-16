@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Búsqueda Simple</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Header placeholder -->
+    <div id="site-header-placeholder"></div>
+    
+    <!-- Content -->
+    <div class="container mx-auto p-8">
+        <h1 class="text-2xl font-bold mb-4">Test de Búsqueda</h1>
+        <p class="mb-4">Abre la consola del navegador (F12) para ver los logs de depuración.</p>
+        <p class="mb-4">Intenta buscar productos en el buscador del header.</p>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="components/header_content.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/header.js"></script>
+    
+    <script>
+        // Verificar que getProducts está disponible
+        console.log('getProducts function:', typeof getProducts);
+        
+        // Verificar productos disponibles
+        if (typeof getProducts === 'function') {
+            const products = getProducts();
+            console.log('Total products:', products.length);
+            
+            if (products.length > 0) {
+                console.log('First product:', products[0]);
+            }
+        }
+    </script>
+</body>
+</html>

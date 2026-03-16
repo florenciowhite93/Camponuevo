@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Cuenta - Camponuevo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2d5a27',
+                        secondary: '#4caf50',
+                        accent: '#8bc34a',
+                        light: '#f1f8e9',
+                        dark: '#1b5e20'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f8fafc; scroll-behavior: smooth; }
+        .glass-header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .tab-active {
+            color: #2d5a27;
+            border-bottom: 2px solid #2d5a27;
+        }
+        .order-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- Header -->
+    <div id="site-header-placeholder"></div>
+    <script src="components/header_content.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/header.js"></script>
+
+    <!-- Page Header -->
+    <div class="bg-primary py-12 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-dark to-primary opacity-90"></div>
+        <div class="container mx-auto px-4 relative z-10 text-center">
+            <h1 class="text-3xl md:text-5xl font-extrabold text-white mb-2">Mi Cuenta</h1>
+            <p class="text-green-100 italic">Gestiona tus datos y revisa tus pedidos</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-12">
+        <div class="flex flex-col lg:flex-row gap-8">
+            
+            <!-- Sidebar / Navigation -->
+            <aside class="lg:w-1/4">
+                <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-28 border border-gray-100">
+                    <nav class="space-y-2">
+                        <button id="tabProfile" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium transition tab-active">
+                            <i class="fas fa-user-circle text-primary"></i>
+                            Perfil
+                        </button>
+                        <button id="tabOrders" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-gray-600 hover:bg-gray-50 transition">
+                            <i class="fas fa-box-open text-primary"></i>
+                            Historial de Pedidos
+                        </button>
+                        <button id="tabSecurity" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-gray-600 hover:bg-gray-50 transition">
+                            <i class="fas fa-lock text-primary"></i>
+                            Seguridad
+                        </button>
+                    </nav>
+                    
+                    <div class="mt-8 pt-6 border-t border-gray-100">
+                        <button id="btnLogoutSidebar" class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition font-medium">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="lg:w-3/4">
+                
+                <!-- Profile Tab -->
+                <div id="viewProfile" class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Datos Personales</h2>
+                        
+                        <form id="profileForm" class="space-y-5">
+                            <div id="profileSuccess" class="hidden bg-green-50 text-green-600 p-3 rounded-lg text-sm border border-green-100 flex items-start mb-4">
+                                <i class="fas fa-check-circle mt-0.5 mr-2"></i>
+                                <span>Perfil actualizado exitosamente.</span>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nombre Completo *</label>
+                                <input type="text" id="profileName" required placeholder="Tu nombre" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Correo Electrónico</label>
+                                <input type="email" id="profileEmail" disabled class="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 cursor-not-allowed">
+                                <p class="text-xs text-gray-400 mt-1">El correo no se puede modificar.</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Teléfono *</label>
+                                <input type="tel" id="profilePhone" required placeholder="+54 11 1234-5678" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Ubicación/Establecimiento</label>
+                                <input type="text" id="profileLocation" placeholder="Dirección del establecimiento" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">CUIT / DNI</label>
+                                <input type="text" id="profileIdentification" placeholder="20-12345678-9" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                            </div>
+                            
+                            <button type="submit" class="bg-primary hover:bg-dark text-white font-bold py-3 px-8 rounded-xl transition shadow-lg">
+                                Guardar Cambios
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Orders Tab -->
+                <div id="viewOrders" class="space-y-6 hidden">
+                    <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Historial de Pedidos</h2>
+                        
+                        <div id="ordersContainer" class="space-y-4">
+                            <!-- Orders will be loaded here -->
+                            <div id="noOrders" class="text-center py-12 text-gray-500">
+                                <i class="fas fa-box-open text-4xl mb-4 text-gray-300"></i>
+                                <p>No tienes pedidos realizados aún.</p>
+                                <a href="catalog.html" class="text-primary font-bold hover:underline mt-2 inline-block">Explorar Catálogo</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Tab -->
+                <div id="viewSecurity" class="space-y-6 hidden">
+                    <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Cambiar Contraseña</h2>
+                        
+                        <form id="passwordForm" class="space-y-5">
+                            <div id="passwordSuccess" class="hidden bg-green-50 text-green-600 p-3 rounded-lg text-sm border border-green-100 flex items-start mb-4">
+                                <i class="fas fa-check-circle mt-0.5 mr-2"></i>
+                                <span>Contraseña actualizada exitosamente.</span>
+                            </div>
+                            
+                            <div id="passwordError" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-100 flex items-start mb-4">
+                                <i class="fas fa-exclamation-circle mt-0.5 mr-2"></i>
+                                <span id="passwordErrorMessage">Error.</span>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Contraseña Actual</label>
+                                <input type="password" id="currentPassword" required placeholder="Tu contraseña actual" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nueva Contraseña</label>
+                                <input type="password" id="newPassword" required placeholder="Mínimo 6 caracteres" minlength="6" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Confirmar Nueva Contraseña</label>
+                                <input type="password" id="confirmNewPassword" required placeholder="Repite la nueva contraseña" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                            </div>
+                            
+                            <button type="submit" class="bg-primary hover:bg-dark text-white font-bold py-3 px-8 rounded-xl transition shadow-lg">
+                                Actualizar Contraseña
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Security Question Section -->
+                    <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Pregunta de Seguridad</h2>
+                        <p class="text-gray-600 mb-4">Configura una pregunta de seguridad para poder recuperar tu contraseña si la olvidas.</p>
+                        
+                        <form id="securityQuestionForm" class="space-y-5">
+                            <div id="securitySuccess" class="hidden bg-green-50 text-green-600 p-3 rounded-lg text-sm border border-green-100 flex items-start mb-4">
+                                <i class="fas fa-check-circle mt-0.5 mr-2"></i>
+                                <span>Pregunta de seguridad actualizada.</span>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Pregunta de Seguridad</label>
+                                <select id="profileSecurityQuestion" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                                    <option value="">Selecciona una pregunta...</option>
+                                    <option value="¿Nombre de tu primera mascota?">¿Nombre de tu primera mascota?</option>
+                                    <option value="¿Ciudad donde naciste?">¿Ciudad donde naciste?</option>
+                                    <option value="¿Nombre de tu mejor amigo de la infancia?">¿Nombre de tu mejor amigo de la infancia?</option>
+                                    <option value="¿Marca de tu primer auto?">¿Marca de tu primer auto?</option>
+                                    <option value="¿Comida favorita de tu infancia?">¿Comida favorita de tu infancia?</option>
+                                    <option value="__custom__">Escribir mi propia pregunta...</option>
+                                </select>
+                            </div>
+                            
+                            <div id="customQuestionContainerProfile" class="hidden">
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tu Pregunta Personalizada</label>
+                                <input type="text" id="profileCustomQuestion" placeholder="Escribe tu pregunta (máx. 100 caracteres)" maxlength="100" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Respuesta a la Pregunta</label>
+                                <input type="text" id="profileSecurityAnswer" placeholder="Tu respuesta (mín. 3 caracteres)" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                            </div>
+                            
+                            <button type="submit" class="bg-primary hover:bg-dark text-white font-bold py-3 px-8 rounded-xl transition shadow-lg">
+                                Guardar Pregunta de Seguridad
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white pt-12 pb-8 mt-auto">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <div class="bg-white w-10 h-10 rounded-full flex items-center justify-center">
+                            <i class="fas fa-seedling text-primary text-xl"></i>
+                        </div>
+                        <span class="ml-2 text-2xl font-bold">Camponuevo</span>
+                    </div>
+                    <p class="text-gray-300 mb-4">Tu tienda ecológica para productos naturales y orgánicos.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4 text-white border-b border-gray-700 pb-2 inline-block">Menú Principal</h3>
+                    <ul class="space-y-2">
+                        <li><a href="index.html" class="text-gray-300 hover:text-white transition">Inicio</a></li>
+                        <li><a href="catalog.html" class="text-gray-300 hover:text-white transition">Catálogo de Productos</a></li>
+                        <li><a href="about.html#nosotros" class="text-gray-300 hover:text-white transition">Nosotros</a></li>
+                        <li><a href="about.html#contacto" class="text-gray-300 hover:text-white transition">Contacto</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Categorías</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Productos Orgánicos</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Semillas</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Plantas</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Contacto</h3>
+                    <ul class="space-y-3 text-gray-300">
+                        <li class="flex items-center">
+                            <i class="fas fa-phone mr-3"></i>
+                            <span>+54 11 1234-5678</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-envelope mr-3"></i>
+                            <span>info@camponuevo.com</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+                <p>&copy; 2023 Camponuevo. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/user.js"></script>
+</body>
+</html>

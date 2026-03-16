@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camponuevo - E-commerce</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2d5a27',
+                        secondary: '#4caf50',
+                        accent: '#8bc34a',
+                        light: '#f1f8e9',
+                        dark: '#1b5e20'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fafc;
+            scroll-behavior: smooth;
+        }
+
+        .hero-bg {
+            background: linear-gradient(135deg, rgba(15, 30, 15, 0.85), rgba(45, 90, 39, 0.75)), url('https://images.unsplash.com/photo-1603350514202-7091b5b1c2d9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .glass-header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .product-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .category-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+            min-width: 280px;
+            max-width: 320px;
+            width: 100%;
+        }
+
+        .category-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 15px 30px -5px rgba(76, 175, 80, 0.2);
+            border-color: #4caf50;
+            background: linear-gradient(to bottom right, #ffffff, #f1f8e9);
+        }
+
+        .cart-icon {
+            position: relative;
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: linear-gradient(135deg, #ff9800, #ff5722);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 11px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(255, 87, 34, 0.4);
+        }
+
+        .text-gradient {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-image: linear-gradient(90deg, #4caf50, #8bc34a);
+        }
+
+        .blob-shape {
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            animation: morph 8s ease-in-out infinite both alternate;
+        }
+
+        .svg-icon svg {
+            width: 2.5rem;
+            height: 2.5rem;
+            fill: #2d5a27;
+        }
+
+        @keyframes morph {
+            0% {
+                border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            }
+
+            100% {
+                border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <!-- Header -->
+    <div id="site-header-placeholder"></div>
+    <script src="js/data.js"></script>
+    <script src="components/header_content.js"></script>
+    <script src="js/header.js"></script>
+
+
+    <!-- Hero Section -->
+    <section class="hero-bg text-white py-32 relative overflow-hidden">
+        <!-- Decorative subtle elements -->
+        <div
+            class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNmZmYiLz48L3N2Zz4=')]">
+        </div>
+
+        <div class="container mx-auto px-4 relative z-10">
+            <div class="max-w-4xl mx-auto text-center">
+                <span
+                    class="inline-block py-1 px-3 rounded-full bg-white bg-opacity-20 backdrop-blur-sm border border-white border-opacity-30 text-sm font-semibold mb-6 tracking-wider uppercase">Lo
+                    mejor para tu campo</span>
+                <h1 class="text-5xl md:text-7xl font-extrabold mb-6 leading-tight drop-shadow-lg">Productos <span
+                        class="text-gradient">Naturales</span><br>para tu Bienestar</h1>
+                <p class="text-xl md:text-2xl mb-10 max-w-2xl mx-auto text-gray-100 font-light drop-shadow-md">Descubre
+                    nuestra selección de productos ecológicos y orgánicos, cuidadosamente seleccionados para garantizar
+                    la máxima calidad agrícola y veterinaria.</p>
+
+                <div class="flex flex-col sm:flex-row justify-center gap-5">
+                    <a href="catalog.html"
+                        class="bg-gradient-to-r from-secondary to-accent hover:from-green-500 hover:to-green-400 text-white font-bold py-4 px-10 rounded-full transition-all transform hover:scale-105 hover:shadow-lg hover:shadow-green-500/50 flex items-center justify-center">
+                        <i class="fas fa-shopping-bag mr-2"></i> Ver Catálogo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="py-20 bg-white relative">
+        <div
+            class="absolute top-0 right-0 w-64 h-64 bg-green-50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 -translate-y-1/2 translate-x-1/2 pointer-events-none">
+        </div>
+
+        <div class="container mx-auto px-4 relative z-10">
+            <div class="text-center mb-16">
+                <h2 class="text-sm font-bold tracking-widest text-secondary uppercase mb-2">Explora</h2>
+                <h3 class="text-4xl md:text-5xl font-extrabold text-gray-900 drop-shadow-sm">Nuestras Categorías</h3>
+            </div>
+
+            <div id="categoriesContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-8 justify-items-center" style="justify-content: center;">
+                <!-- Categories will be loaded dynamically -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Products -->
+    <section id="productos" class="py-24 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-14 border-b border-gray-200 pb-6">
+                <div>
+                    <h2 class="text-sm font-bold tracking-widest text-secondary uppercase mb-2">Catálogo</h2>
+                    <h3 class="text-4xl font-extrabold text-gray-900">Productos Destacados</h3>
+                </div>
+                <a href="catalog.html"
+                    class="text-primary hover:text-secondary font-bold group mt-4 md:mt-0 px-6 py-2 bg-white rounded-full shadow-sm border border-gray-100 hover:shadow-md transition">
+                    Ver Todos <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition"></i>
+                </a>
+            </div>
+
+            <div id="featuredContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Products will be loaded dynamically here via JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="py-24 bg-white relative overflow-hidden">
+        <div class="container mx-auto px-4 relative z-10">
+            <div class="text-center mb-16">
+                <h2 class="text-sm font-bold tracking-widest text-secondary uppercase mb-2">Testimoniales</h2>
+                <h3 class="text-4xl font-extrabold text-gray-900">Lo que dicen en el campo</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Testimonial 1 -->
+                <div
+                    class="bg-white border border-gray-100 shadow-xl shadow-gray-200/40 p-10 rounded-3xl relative transition transform hover:-translate-y-2 hover:shadow-2xl">
+                    <i class="fas fa-quote-right absolute top-8 right-8 text-6xl text-gray-100 opacity-50 z-0"></i>
+                    <div class="relative z-10">
+                        <div class="flex text-yellow-400 mb-6 text-sm">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i
+                                class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                        <p class="text-gray-600 text-lg leading-relaxed mb-8">"Los productos de veterinaria son de
+                            excelente calidad. Mis animales han mejorado mucho su salud general gracias a las vitaminas
+                            y suplementos."</p>
+                        <div class="flex items-center">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=150&q=80"
+                                alt="Avatar" class="w-14 h-14 rounded-full object-cover border-2 border-primary">
+                            <div class="ml-4">
+                                <h4 class="font-bold text-gray-900">Esteban González</h4>
+                                <span class="text-sm text-gray-500">Productor Ganadero</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Testimonial 2 -->
+                <div
+                    class="bg-white border border-gray-100 shadow-xl shadow-gray-200/40 p-10 rounded-3xl relative transition transform hover:-translate-y-2 hover:shadow-2xl md:-translate-y-4">
+                    <i class="fas fa-quote-right absolute top-8 right-8 text-6xl text-gray-100 opacity-50 z-0"></i>
+                    <div class="relative z-10">
+                        <div class="flex text-yellow-400 mb-6 text-sm">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i
+                                class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <p class="text-gray-600 text-lg leading-relaxed mb-8">"La atención al cliente es increíble. Me
+                            explicaron al detalle la dosis exacta que necesitaba para combatir los parásitos en mis
+                            vacas."</p>
+                        <div class="flex items-center">
+                            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-1.2.1&auto=format&fit=crop&w=150&q=80"
+                                alt="Avatar" class="w-14 h-14 rounded-full object-cover border-2 border-primary">
+                            <div class="ml-4">
+                                <h4 class="font-bold text-gray-900">María Rodriguez</h4>
+                                <span class="text-sm text-gray-500">Administradora de Estancia</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Testimonial 3 -->
+                <div
+                    class="bg-white border border-gray-100 shadow-xl shadow-gray-200/40 p-10 rounded-3xl relative transition transform hover:-translate-y-2 hover:shadow-2xl">
+                    <i class="fas fa-quote-right absolute top-8 right-8 text-6xl text-gray-100 opacity-50 z-0"></i>
+                    <div class="relative z-10">
+                        <div class="flex text-yellow-400 mb-6 text-sm">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i
+                                class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                        <p class="text-gray-600 text-lg leading-relaxed mb-8">"Compro todas mis semillas y suplementos
+                            equinos en su plataforma web. Siempre envían rápido y la interfaz es fácil de usar desde el
+                            teléfono."</p>
+                        <div class="flex items-center">
+                            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=150&q=80"
+                                alt="Avatar" class="w-14 h-14 rounded-full object-cover border-2 border-primary">
+                            <div class="ml-4">
+                                <h4 class="font-bold text-gray-900">Martín Pinal</h4>
+                                <span class="text-sm text-gray-500">Caballos y Pasturas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="py-20 relative overflow-hidden">
+        <!-- Modern gradient background -->
+        <div class="absolute inset-0 bg-gradient-to-br from-primary via-dark to-primary"></div>
+        <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+        </div>
+        <!-- Decorative blobs -->
+        <div
+            class="absolute top-0 left-0 w-96 h-96 bg-white opacity-5 rounded-full filter blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+        </div>
+        <div
+            class="absolute bottom-0 right-0 w-96 h-96 bg-accent opacity-20 rounded-full filter blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none">
+        </div>
+
+        <div class="container mx-auto px-4 text-center relative z-10">
+            <i class="fas fa-envelope-open-text text-5xl text-accent mb-6"></i>
+            <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-6 drop-shadow-md">Únete al Boletín del Campo
+            </h2>
+            <p class="text-xl text-gray-200 mb-10 max-w-2xl mx-auto font-light">Recibe ofertas exclusivas, información
+                sobre productos veterinarios y las últimas novedades agrícolas.</p>
+
+            <form
+                class="max-w-xl mx-auto flex flex-col sm:flex-row gap-3 relative shadow-2xl p-2 bg-white bg-opacity-10 backdrop-blur-md rounded-2xl md:rounded-full border border-white border-opacity-20">
+                <div class="flex-grow flex items-center relative">
+                    <i class="fas fa-envelope absolute left-6 text-gray-400"></i>
+                    <input type="email" placeholder="Ingresa tu correo electrónico"
+                        class="w-full pl-14 pr-6 py-4 rounded-xl md:rounded-full text-gray-800 focus:outline-none focus:ring-2 focus:ring-accent bg-white bg-opacity-95 font-medium"
+                        required>
+                </div>
+                <button type="submit"
+                    class="bg-gradient-to-r from-secondary to-accent hover:from-green-500 hover:to-green-400 text-white font-bold px-10 py-4 rounded-xl md:rounded-full transition shadow-lg whitespace-nowrap">
+                    Suscribirse
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white pt-12 pb-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <div class="bg-white w-10 h-10 rounded-full flex items-center justify-center">
+                            <i class="fas fa-seedling text-primary text-xl"></i>
+                        </div>
+                        <span class="ml-2 text-2xl font-bold">Camponuevo</span>
+                    </div>
+                    <p class="text-gray-300 mb-4">Tu tienda ecológica para productos naturales y orgánicos.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-pinterest"></i></a>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-bold mb-4 text-white border-b border-gray-700 pb-2 inline-block">Menú
+                        Principal</h3>
+                    <ul class="space-y-2">
+                        <li><a href="index.html" class="text-gray-300 hover:text-white transition">Inicio</a></li>
+                        <li><a href="catalog.html" class="text-gray-300 hover:text-white transition">Catálogo de
+                                Productos</a></li>
+                        <li><a href="about.html" class="text-gray-300 hover:text-white transition">Nosotros y
+                                Contacto</a></li>
+                        <li><a href="admin.html" class="text-gray-300 hover:text-white transition">Ingreso
+                                Administrador</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Categorías</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Productos Orgánicos</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Semillas</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Plantas</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Productos Ecológicos</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition">Accesorios</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Contacto</h3>
+                    <ul class="space-y-3 text-gray-300">
+                        <li class="flex items-start">
+                            <i class="fas fa-map-marker-alt mt-1 mr-3"></i>
+                            <span>Av. Principal 123, Ciudad Jardín</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-phone mr-3"></i>
+                            <span>+54 11 1234-5678</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-envelope mr-3"></i>
+                            <span>info@camponuevo.com</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+                <p>&copy; 2023 Camponuevo. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Core Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/animalIcons.js"></script>
+    <script src="js/productCard.js"></script>
+    <script src="js/app.js"></script>
+
+    <!-- Mobile Menu Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function () {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // Load categories dynamically
+            const categoriesContainer = document.getElementById('categoriesContainer');
+            if (categoriesContainer && typeof getHomeCategories === 'function' && typeof getCategories === 'function') {
+                const allCategories = getCategories();
+                const homeCatData = getHomeCategories();
+                const categories = homeCatData.map(h => ({
+                    ...allCategories.find(c => c.id === h.id),
+                    svg: h.svg
+                })).filter(Boolean);
+                
+                if (categories && categories.length > 0) {
+                    const categoryIcons = {
+                        'veterinaria': 'fa-vial',
+                        'bovinos': 'faCow',
+                        'ovinos': 'faSheep',
+                        'equinos': 'faHorse',
+                        'porcinos': 'faPig',
+                        'caninos': 'faDog',
+                        'felinos': 'faCat',
+                        'agricultura': 'fa-leaf'
+                    };
+
+                    categories.forEach((cat, index) => {
+                        const icon = categoryIcons[cat.id] || 'fa-box';
+                        const delay = index * 1;
+                        
+                        let iconHtml;
+                        if (cat.svg) {
+                            iconHtml = `<div class="svg-icon">${cat.svg}</div>`;
+                        } else {
+                            iconHtml = `<i class="fas ${icon} text-primary text-4xl"></i>`;
+                        }
+
+                        categoriesContainer.innerHTML += `
+                            <a href="catalog.html?category=${cat.id}"
+                                class="category-card border border-gray-100 rounded-2xl p-8 text-center flex flex-col items-center h-full">
+                                <div class="bg-gradient-to-br from-green-50 to-green-100 w-24 h-24 rounded-full flex items-center justify-center mb-6 shadow-inner blob-shape"
+                                    style="animation-delay: ${delay}s;">
+                                    ${iconHtml}
+                                </div>
+                                <h3 class="text-xl font-bold mb-3 text-gray-800">${cat.name}</h3>
+                                <p class="text-gray-500 text-sm">${cat.subCategories?.length || 0} subcategorías disponibles</p>
+                            </a>
+                        `;
+                    });
+
+                    const colCount = categories.length;
+                    if (colCount <= 4) {
+                        categoriesContainer.style.gridTemplateColumns = `repeat(${colCount}, minmax(280px, 320px))`;
+                        categoriesContainer.style.justifyContent = 'center';
+                    }
+                } else {
+                    categoriesContainer.innerHTML = '<p class="text-gray-500 text-center col-span-full">No hay categorías disponibles</p>';
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

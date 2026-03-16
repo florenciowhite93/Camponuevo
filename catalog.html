@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo - Camponuevo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2d5a27',
+                        secondary: '#4caf50',
+                        accent: '#8bc34a',
+                        light: '#f1f8e9',
+                        dark: '#1b5e20'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f8fafc; scroll-behavior: smooth; }
+        .glass-header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        /* Product card: clean, no image shadows */
+        .product-card {
+            transition: box-shadow 0.25s ease, transform 0.25s ease;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.10);
+        }
+        /* Image container: pure white, no blending */
+        .product-card .img-wrap {
+            background: #ffffff;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .cart-icon { position: relative; }
+        .cart-count {
+            position: absolute; top: -8px; right: -8px;
+            background: linear-gradient(135deg, #ff9800, #ff5722);
+            color: white; border-radius: 50%; width: 20px; height: 20px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 11px; font-weight: bold; box-shadow: 0 2px 5px rgba(255, 87, 34, 0.4);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- Header -->
+    <div id="site-header-placeholder"></div>
+    <script src="js/data.js"></script>
+    <script src="components/header_content.js"></script>
+    <script src="js/header.js"></script>
+
+
+    <!-- Page Header -->
+    <div class="bg-primary pt-12 pb-24 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-dark to-primary opacity-90"></div>
+        <div class="container mx-auto px-4 relative z-10 text-center flex flex-col items-center justify-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4">Catálogo de Productos</h1>
+            <p class="text-green-100 text-lg max-w-3xl">Encuentra los mejores insumos agrícolas y veterinarios para tu campo, filtrando por especies o laboratorio.</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 -mt-12 relative z-20 pb-20">
+        <div class="flex flex-col lg:flex-row gap-8">
+            
+            <!-- Sidebar / Filters -->
+            <aside class="lg:w-1/4">
+                <div class="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-6 sticky top-28 border border-gray-100">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-filter text-primary mr-2"></i> Filtros</h2>
+                        <button id="btnResetFilters" class="text-sm text-gray-500 hover:text-primary underline">Limpiar</button>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Buscar</label>
+                        <div class="relative">
+                            <input type="text" id="searchInput" placeholder="Ej. Ivermectina..." class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                            <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-100 my-6">
+
+                    <!-- Breed Filter -->
+                    <div class="mb-6" id="breedFilterContainer">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">Especie Animal</label>
+                        <div class="relative">
+                            <button type="button" id="breedFilterBtn" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition text-left flex justify-between items-center">
+                                <span id="breedFilterText">Todas las especies</span>
+                                <i class="fas fa-chevron-down text-gray-400 transition-transform" id="breedFilterChevron"></i>
+                            </button>
+                            <div id="breedFilterDropdown" class="hidden absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                                <div class="p-2 space-y-1" id="breedFilters">
+                                    <label class="flex items-center cursor-pointer group p-2 hover:bg-gray-50 rounded-lg">
+                                        <input type="checkbox" value="bovino" class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary mr-3 filter-checkbox">
+                                        <img src="svg/Bovino.svg" alt="Bovino" class="w-6 h-6 object-contain mr-2">
+                                        <span class="text-gray-600 group-hover:text-primary transition flex-grow">Bovino</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer group p-2 hover:bg-gray-50 rounded-lg">
+                                        <input type="checkbox" value="ovino" class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary mr-3 filter-checkbox">
+                                        <img src="svg/Ovino.svg" alt="Ovino" class="w-6 h-6 object-contain mr-2">
+                                        <span class="text-gray-600 group-hover:text-primary transition flex-grow">Ovino</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer group p-2 hover:bg-gray-50 rounded-lg">
+                                        <input type="checkbox" value="equino" class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary mr-3 filter-checkbox">
+                                        <img src="svg/Equino.svg" alt="Equino" class="w-6 h-6 object-contain mr-2">
+                                        <span class="text-gray-600 group-hover:text-primary transition flex-grow">Equino</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer group p-2 hover:bg-gray-50 rounded-lg">
+                                        <input type="checkbox" value="porcino" class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary mr-3 filter-checkbox">
+                                        <img src="svg/Porcino.svg" alt="Porcino" class="w-6 h-6 object-contain mr-2">
+                                        <span class="text-gray-600 group-hover:text-primary transition flex-grow">Porcino</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer group p-2 hover:bg-gray-50 rounded-lg">
+                                        <input type="checkbox" value="caninos" class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary mr-3 filter-checkbox">
+                                        <img src="svg/Canino.svg" alt="Canino" class="w-6 h-6 object-contain mr-2">
+                                        <span class="text-gray-600 group-hover:text-primary transition flex-grow">Caninos</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer group p-2 hover:bg-gray-50 rounded-lg">
+                                        <input type="checkbox" value="felinos" class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary mr-3 filter-checkbox">
+                                        <img src="svg/Felino.svg" alt="Felino" class="w-6 h-6 object-contain mr-2">
+                                        <span class="text-gray-600 group-hover:text-primary transition flex-grow">Felinos</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-100 my-6">
+
+                    <!-- Laboratory Filter -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">Laboratorio</label>
+                        <select id="labFilter" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition appearance-none">
+                            <option value="">Todos los laboratorios</option>
+                            <!-- Options rendered by JS -->
+                        </select>
+                        <div class="relative pointer-events-none">
+                            <i class="fas fa-chevron-down absolute bottom-3.5 right-4 text-gray-400"></i>
+                        </div>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">Categoría</label>
+                        <select id="catFilter" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition appearance-none">
+                            <option value="">Todas las categorías</option>
+                            <!-- Options rendered by JS -->
+                        </select>
+                        <div class="relative pointer-events-none">
+                            <i class="fas fa-chevron-down absolute bottom-3.5 right-4 text-gray-400"></i>
+                        </div>
+                    </div>
+
+                    <!-- Sub-category Filter -->
+                    <div class="mt-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">Sub-Categoría</label>
+                        <select id="subCatFilter" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition appearance-none">
+                            <option value="">Todas las sub-categorías</option>
+                            <!-- Options rendered by JS -->
+                        </select>
+                        <div class="relative pointer-events-none">
+                            <i class="fas fa-chevron-down absolute bottom-3.5 right-4 text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Product Grid Area -->
+            <section class="lg:w-3/4">
+                <!-- Toolbar -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600">
+                    <div class="mb-2 sm:mb-0" id="resultsCount">Mostrando <span class="font-bold text-gray-800">0</span> productos</div>
+                    <div class="flex items-center gap-3">
+                        <span>Ordenar por:</span>
+                        <select id="sortFilter" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="newest">Más recientes</option>
+                            <option value="price_asc">Precio: Menor a Mayor</option>
+                            <option value="price_desc">Precio: Mayor a Menor</option>
+                            <option value="name_asc">Nombre: A-Z</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Grid -->
+                <div id="catalogGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Products injected via JS -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="noResults" class="hidden bg-white rounded-2xl p-16 text-center shadow-sm border border-gray-100">
+                    <i class="fas fa-box-open text-6xl text-gray-200 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">No se encontraron productos</h3>
+                    <p class="text-gray-500 mb-6">Intenta modificar tus filtros de búsqueda.</p>
+                    <button class="btn-reset bg-primary hover:bg-dark text-white px-6 py-2 rounded-full font-medium transition">Limpiar filtros</button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white pt-16 pb-8 mt-auto">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-6">
+                        <div class="bg-white w-10 h-10 rounded-full flex items-center justify-center">
+                            <i class="fas fa-seedling text-primary text-xl"></i>
+                        </div>
+                        <span class="ml-2 text-2xl font-bold">Camponuevo</span>
+                    </div>
+                    <p class="text-gray-400 mb-6 font-light">Tu tienda agropecuaria de confianza para productos naturales, veterinarios y agrícolas.</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold mb-6 text-white border-b border-gray-700 pb-2 inline-block">Menú Principal</h3>
+                    <ul class="space-y-3 font-light text-gray-300">
+                        <li><a href="index.html" class="hover:text-accent transition flex items-center"><i class="fas fa-chevron-right text-xs mr-2 text-primary"></i> Inicio</a></li>
+                        <li><a href="catalog.html" class="hover:text-accent transition flex items-center text-accent"><i class="fas fa-chevron-right text-xs mr-2 text-primary"></i> Catálogo</a></li>
+                        <li><a href="about.html#nosotros" class="hover:text-accent transition flex items-center"><i class="fas fa-chevron-right text-xs mr-2 text-primary"></i> Nosotros</a></li>
+                        <li><a href="about.html#contacto" class="hover:text-accent transition flex items-center"><i class="fas fa-chevron-right text-xs mr-2 text-primary"></i> Contacto</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2026 Camponuevo. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/animalIcons.js"></script>
+    <script src="js/productCard.js"></script>
+    <script src="js/catalog.js"></script>
+
+    <!-- Mobile Menu Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+            }
+        });
+    </script>
+</body>
+</html>

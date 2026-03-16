@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Producto - Camponuevo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2d5a27',
+                        secondary: '#4caf50',
+                        accent: '#8bc34a',
+                        light: '#f1f8e9',
+                        dark: '#1b5e20'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f3f4f6; }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        /* White image panel — dot texture only, no color gradients */
+        .img-panel {
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        /* Subtle dot pattern for texture — neutral gray only */
+        .img-panel::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+            background-size: 24px 24px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        .img-panel img {
+            position: relative;
+            z-index: 1;
+        /* Image panel */
+        .img-panel {
+            overflow: visible;
+            background: #ffffff;
+            position: relative;
+        }
+        .img-panel::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+            background-size: 24px 24px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        .img-panel img {
+            position: relative;
+            z-index: 1;
+            transition: transform 0.2s ease-out, transform-origin 0.2s ease-out;
+            cursor: crosshair;
+            margin-left: -10%;
+            transform-origin: center center;
+        }
+        
+        /* Divider between image and info panels */
+        @media (min-width: 768px) {
+            .img-panel {
+                border-right: 1px solid #e5e7eb;
+            }
+        }
+        
+        /* Horizontal spec cards */
+        .spec-pill {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            padding: 16px 20px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            min-width: 160px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: all 0.2s ease;
+        }
+        .spec-pill:hover {
+            box-shadow: 0 4px 16px rgba(45, 90, 39, 0.12);
+            border-color: #c8d9cc;
+            transform: translateY(-2px);
+        }
+        .spec-pill > svg:first-child {
+            color: #2d5a27;
+            flex-shrink: 0;
+        }
+        .spec-pill .spec-content {
+            display: flex;
+            flex-direction: column;
+        }
+        .spec-pill .spec-label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+        .spec-pill .spec-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e293b;
+            line-height: 1.3;
+        }
+        
+        /* Section titles */
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        .section-title i {
+            margin-right: 8px;
+            color: #2d5a27;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+    <!-- Header -->
+    <div id="site-header-placeholder"></div>
+    <script src="components/header_content.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/animalIcons.js"></script>
+    <script src="js/header.js"></script>
+
+
+    <!-- Product Details Section -->
+    <main class="flex-grow py-12">
+        <div class="container mx-auto px-4">
+            
+            <!-- Breadcrumbs -->
+            <div class="text-sm text-gray-500 mb-8 flex items-center">
+                <a href="index.html" class="hover:text-primary">Inicio</a>
+                <i class="fas fa-chevron-right text-xs mx-2"></i>
+                <a href="index.html#productos" class="hover:text-primary">Productos</a>
+                <i class="fas fa-chevron-right text-xs mx-2"></i>
+                <span class="text-gray-700 font-medium" id="bcTitle">Cargando...</span>
+            </div>
+
+            <!-- Loader -->
+            <div id="loader" class="flex justify-center items-center py-20">
+                <i class="fas fa-circle-notch fa-spin text-4xl text-primary"></i>
+            </div>
+
+            <div id="productNotFound" class="hidden text-center py-20">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Producto no encontrado</h2>
+                <a href="index.html" class="text-primary hover:underline">Volver a la tienda</a>
+            </div>
+
+            <!-- Main Product Wrapper -->
+            <div id="productWrapper" class="hidden flex flex-col">
+                
+                <!-- Imagen + Datos principales -->
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col md:flex-row mb-8">
+                    <!-- Image Side -->
+                    <div class="md:w-1/2 img-panel flex items-center justify-center relative md:border-r md:border-gray-200" style="min-height: 500px;">
+                        <img id="productImage" src="https://via.placeholder.com/600" alt="Producto"
+                            class="max-w-[120%] w-[120%] h-auto object-contain"
+                            onerror="this.src='https://via.placeholder.com/600?text=Sin+imagen'">
+                        <div id="animalIcons" class="absolute top-4 right-4 flex flex-col gap-2 z-10">
+                            <!-- Filled via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Details Side -->
+                    <div class="md:w-1/2 p-8 md:p-12 flex flex-col">
+                        <!-- laboratory first -->
+                        <div id="productLaboratories" class="flex flex-wrap gap-2 mb-4">
+                            <!-- Laboratory tags here -->
+                        </div>
+                        
+                        <!-- Title -->
+                        <h1 id="productTitle" class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Cargando...</h1>
+                        
+                        <!-- Subcategories -->
+                        <div id="productSubCategories" class="flex flex-wrap gap-2 mb-6">
+                            <!-- Sub-category tags here -->
+                        </div>
+                        
+                        <div class="text-3xl font-bold text-gray-900 mb-6" id="productPrice">$0.00</div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                            <button id="btnAddToCart" class="flex-1 bg-primary hover:bg-dark text-white font-bold py-4 px-8 rounded-xl transition flex items-center justify-center shadow-md shadow-green-900/20">
+                                <i class="fas fa-shopping-cart mx-2"></i> Agregar al Pedido
+                            </button>
+                            <a id="btnWhatsApp" href="#" target="_blank" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-xl transition flex items-center justify-center shadow-md shadow-green-900/20">
+                                <i class="fab fa-whatsapp text-xl mx-2"></i> Consultar
+                            </a>
+                            <a id="btnExternal" href="#" target="_blank" 
+                               class="hidden bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold w-14 h-14 rounded-lg transition flex-shrink-0 flex items-center justify-center border border-gray-200" 
+                               title="Más información del laboratorio">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                    <polyline points="15 3 21 3 21 9"/>
+                                    <line x1="10" y1="14" x2="21" y2="3"/>
+                                </svg>
+                            </a>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-8">
+                            <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                                    <i class="fas fa-align-left mr-2 text-primary"></i>Descripción
+                                </h3>
+                                <p id="productDescription" class="text-gray-700 leading-relaxed text-base">
+                                    Descripción del producto.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- specifications: Horizontal Row -->
+                        <div class="mb-8">
+                            <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                                    <i class="fas fa-list-alt mr-2 text-primary"></i>Especificaciones Técnicas
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Volumen / Peso / Cantidad -->
+                                    <div class="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 border border-gray-100">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                <img src="svg/regla.svg" alt="regla" width="22" height="22" class="opacity-80">
+                                            </div>
+                                            <div>
+                                                <div class="text-xs text-gray-400 uppercase tracking-wide">Volumen / Peso / Cantidad</div>
+                                                <div class="font-semibold text-gray-800" id="productVol">--</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Especies -->
+                                    <div class="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 border border-gray-100">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                <img src="svg/especie.svg" alt="especie" width="22" height="22" class="opacity-80">
+                                            </div>
+                                            <div>
+                                                <div class="text-xs text-gray-400 uppercase tracking-wide">Especies</div>
+                                                <div class="font-semibold text-gray-800 capitalize" id="productBreeds">--</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Segunda sección: Dosis y Principios activos (Colapsable) -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-8">
+                    <!-- Header colapsable -->
+                    <button type="button" id="toggleDetailsBtn" class="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition border-b border-gray-200">
+                        <h3 class="text-lg font-bold text-gray-800">Información Adicional</h3>
+                        <i class="fas fa-chevron-down text-gray-400 transition-transform" id="toggleDetailsIcon"></i>
+                    </button>
+                    
+                    <!-- Contenido colapsable -->
+                    <div id="additionalDetailsContent" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                        <!-- Dosis y Administración -->
+                        <div id="doseSection" class="md:border-r md:border-gray-200 md:pr-6">
+                            <h4 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center">
+                                <i class="fas fa-syringe mr-2 text-primary"></i>Dosis y Administración
+                            </h4>
+                            <p class="text-gray-700 leading-relaxed text-base whitespace-pre-wrap" id="productDose">
+                                --
+                            </p>
+                        </div>
+
+                        <!-- Principios Activos -->
+                        <div id="drugsSection" class="md:pl-2">
+                            <h4 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center">
+                                <i class="fas fa-flask mr-2 text-primary"></i>Principios Activos
+                            </h4>
+                            <ul id="productDrugs" class="space-y-2 text-gray-700">
+                                <!-- Populated via JS -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Related Products Section -->
+            <div id="relatedSection" class="hidden mt-24">
+                <h3 class="text-2xl font-bold text-gray-800 mb-8 border-b pb-4">Productos Relacionados</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="relatedContainer">
+                    <!-- Related via JS -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white pt-12 pb-8 mt-auto">
+        <div class="container mx-auto px-4">
+            <div class="border-t border-gray-800 pt-8 text-center text-gray-400">
+                <p>&copy; 2026 Camponuevo. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/product.js"></script>
+</body>
+</html>

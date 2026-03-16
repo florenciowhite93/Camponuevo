@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Búsqueda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-8">
+    <h1>Test de Búsqueda</h1>
+    <input type="text" id="testSearch" placeholder="Escribe para buscar..." class="border p-2">
+    <div id="results"></div>
+    
+    <script src="js/data.js"></script>
+    <script>
+        const testSearch = document.getElementById('testSearch');
+        const results = document.getElementById('results');
+        
+        testSearch.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            
+            if (query.length < 2) {
+                results.innerHTML = '<p>Escribe al menos 2 caracteres</p>';
+                return;
+            }
+            
+            const products = typeof getProducts === 'function' ? getProducts() : [];
+            console.log('Total products:', products.length);
+            
+            const matches = products.filter(p => {
+                const titleMatch = p.title && p.title.toLowerCase().includes(query);
+                const labMatch = p.laboratory && p.laboratory.toLowerCase().includes(query);
+                return titleMatch || labMatch;
+            });
+            
+            console.log('Matches:', matches.length);
+            console.log('Query:', query);
+            
+            if (matches.length > 0) {
+                results.innerHTML = '<h2>Resultados (' + matches.length + '):</h2>' +
+                    matches.map(p => '<p>' + p.title + ' - ' + p.laboratory + '</p>').join('');
+            } else {
+                results.innerHTML = '<p>No se encontraron productos para "' + query + '"</p>';
+            }
+        });
+    </script>
+</body>
+</html>

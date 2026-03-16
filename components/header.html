@@ -1,0 +1,64 @@
+<!-- ===================================================
+     CAMPONUEVO – HEADER COMPARTIDO
+     Editar SOLO este archivo para modificar el header
+     en todas las páginas del sitio.
+     =================================================== -->
+<header class="site-header glass-header sticky top-0 z-50 transition-all duration-300">
+    <div class="container mx-auto px-4 py-3">
+        <div class="flex items-center justify-between gap-4">
+
+            <!-- Logo -->
+            <a href="index.html" class="flex items-center group flex-shrink-0">
+                <img src="img/logo.png" alt="Campo Nuevo" class="h-12 w-auto object-contain"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <!-- Fallback if logo.png doesn't exist -->
+                <div class="hidden items-center">
+                    <div
+                        class="bg-gradient-to-br from-primary to-secondary w-10 h-10 rounded-full flex items-center justify-center shadow-lg transform group-hover:rotate-12 transition">
+                        <i class="fas fa-seedling text-white text-xl"></i>
+                    </div>
+                    <span
+                        class="ml-3 text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">CAMPONUEVO</span>
+                </div>
+            </a>
+
+            <!-- Desktop Navigation -->
+            <nav class="hidden md:flex items-center space-x-8 font-medium">
+                <a href="index.html" class="nav-link" data-page="index">Inicio</a>
+                <a href="catalog.html" class="nav-link" data-page="catalog">Catálogo</a>
+                <a href="about.html#nosotros" class="nav-link" data-page="about">Nosotros</a>
+                <a href="about.html#contacto" class="nav-link" data-page="about">Contacto</a>
+            </nav>
+
+            <!-- Right Actions -->
+            <div class="flex items-center gap-3">
+                <!-- Shopping Cart -->
+                <button
+                    class="text-gray-600 hover:text-primary transition p-2 rounded-full hover:bg-gray-100 relative group/cart">
+                    <i class="fas fa-shopping-cart text-lg"></i>
+                    <span id="cartCount"
+                        class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold hidden">0</span>
+                </button>
+                <a href="https://wa.me/5491112345678" target="_blank"
+                    class="text-gray-600 hover:text-green-600 transition p-2 rounded-full hover:bg-gray-100"
+                    title="Contactar por WhatsApp">
+                    <i class="fab fa-whatsapp text-xl"></i>
+                </a>
+                <!-- Mobile menu toggle -->
+                <button id="mobile-menu-button"
+                    class="md:hidden text-gray-600 p-2 rounded-full hover:bg-gray-100 transition">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Dropdown -->
+        <nav id="mobile-menu" class="hidden md:hidden mt-3 pb-2 border-t border-gray-100 pt-3 flex flex-col gap-2">
+            <a href="index.html" class="nav-link px-2 py-2 rounded-lg hover:bg-gray-50" data-page="index">Inicio</a>
+            <a href="catalog.html" class="nav-link px-2 py-2 rounded-lg hover:bg-gray-50"
+                data-page="catalog">Catálogo</a>
+            <a href="about.html#nosotros" class="nav-link px-2 py-2 rounded-lg hover:bg-gray-50" data-page="about">Nosotros</a>
+            <a href="about.html#contacto" class="nav-link px-2 py-2 rounded-lg hover:bg-gray-50" data-page="about">Contacto</a>
+        </nav>
+    </div>
+</header>
