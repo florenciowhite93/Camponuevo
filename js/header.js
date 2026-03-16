@@ -755,6 +755,9 @@
         }
     } else {
         console.error('SHARED_HEADER_HTML not found. Make sure components/header_content.js is loaded.');
-        placeholder.innerHTML = '<div style="background:#fff3cd; color:#856404; padding:15px; text-align:center; border:1px solid #ffeeba;">Verificando carga del menú...</div>';
+        console.log('Available window keys:', Object.keys(window).filter(k => k.includes('HEADER')));
+        if (placeholder) {
+            placeholder.innerHTML = '<div style="background:#fff3cd; color:#856404; padding:15px; text-align:center; border:1px solid #ffeeba;">Verificando carga del menú...</div>';
+        }
     }
 })();
