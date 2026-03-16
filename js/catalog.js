@@ -1,9 +1,9 @@
 // js/catalog.js
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Verify getProducts is available
-    if (typeof getProducts !== 'function') {
-        console.error('getProducts function not found! Make sure data.js is loaded before catalog.js');
+document.addEventListener('DOMContentLoaded', async () => {
+    // Verify getProductsAsync is available
+    if (typeof getProductsAsync !== 'function') {
+        console.error('getProductsAsync function not found! Make sure data.js is loaded before catalog.js');
         document.getElementById('catalogGrid').innerHTML = '<div class="col-span-full text-center text-red-500 py-8">Error: No se pudo cargar la base de datos de productos.</div>';
         return;
     }
@@ -62,20 +62,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load Data
     console.log('Loading products...');
-    let allProducts = typeof getProducts === 'function' ? getProducts() : [];
+    let allProducts = typeof getProductsAsync === 'function' ? await getProductsAsync() : [];
     console.log('Products loaded:', allProducts.length);
 
-    // Safety: If products are STILL empty after getProducts (which contains initDB), 
+    // Safety: If products are STILL empty after getProductsAsync, 
     // it might be a corrupted localStorage state. Force re-init.
     if (allProducts.length === 0) {
         console.warn('Catalog empty on load. Forcing database re-initialization.');
         localStorage.removeItem('camponuevo_products');
-        allProducts = typeof getProducts === 'function' ? getProducts() : [];
+        allProducts = typeof getProductsAsync === 'function' ? await getProductsAsync() : [];
         console.log('Products after re-init:', allProducts.length);
     }
 
     // Initialize Labs and Sub-categories Dropdown
-    function initFilters() {
+    async function initFilters() {
         // Labs
         if (labFilter) {
             const labs = typeof getLaboratories === 'function' ? getLaboratories() : [];
@@ -88,9 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Categories
+        // Categories - getCategories is async so we await it
         if (catFilter) {
-            const categories = typeof getCategories === 'function' ? getCategories() : [];
+            const categories = typeof getCategories === 'function' ? await getCategories() : [];
             catFilter.innerHTML = '<option value="">Todas las categorías</option>';
             categories.forEach(cat => {
                 const option = document.createElement('option');
@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.head.appendChild(style);
 
     // Initial load
-    initFilters();
+    await initFilters();
     sortFilter.value = 'newest'; // default sort: newest first
     
     // Check for search parameter in URL

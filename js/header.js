@@ -220,7 +220,7 @@
                 searchResultItems.innerHTML = matches.map(p => `
                     <a href="catalog.html?search=${encodeURIComponent(query)}" class="flex items-center gap-3 p-3 hover:bg-gray-50 transition border-b border-gray-50 last:border-0">
                         <div class="w-10 h-10 flex-shrink-0 bg-white border border-gray-100 rounded-lg overflow-hidden p-1">
-                            <img src="${p.image || 'https://via.placeholder.com/100'}" alt="${p.title}" class="w-full h-full object-contain">
+                            <img src="${p.image || 'https://placehold.co/100x100?text=Sin+Img'}" alt="${p.title}" class="w-full h-full object-contain">
                         </div>
                         <div class="flex-1 min-w-0">
                             <h4 class="text-sm font-bold text-gray-800 truncate">${p.title}</h4>
@@ -374,8 +374,8 @@
         let currentRecoveryStep = 1;
 
         // Update UI based on user session
-        function updateAuthUI() {
-            const user = getCurrentUser();
+        async function updateAuthUI() {
+            const user = await getCurrentUser();
             
             if (user && userAuthContainer) {
                 // User is logged in - show dropdown button
@@ -524,7 +524,7 @@
                 
                 if (result.success) {
                     closeAuthModal();
-                    updateAuthUI();
+                    await updateAuthUI();
                     // Update cart count if needed
                     if (typeof updateHeaderCartCount === 'function') {
                         updateHeaderCartCount();
@@ -567,7 +567,7 @@
                 
                 if (result.success) {
                     closeAuthModal();
-                    updateAuthUI();
+                    await updateAuthUI();
                     // Show success message
                     alert('¡Cuenta creada exitosamente! Completa tu perfil para acceder a todas las funcionalidades.');
                 } else {
@@ -652,9 +652,9 @@
 
         // Handle Logout
         if (btnLogout) {
-            btnLogout.addEventListener('click', () => {
+            btnLogout.addEventListener('click', async () => {
                 logoutUser();
-                updateAuthUI();
+                await updateAuthUI();
                 userDropdownContainer.classList.add('hidden');
                 // Update cart count
                 if (typeof updateHeaderCartCount === 'function') {
@@ -668,7 +668,7 @@
         }
 
         // Initialize UI
-        updateAuthUI();
+        (async () => await updateAuthUI())();
     }
 
     // --- End Authentication Logic ---

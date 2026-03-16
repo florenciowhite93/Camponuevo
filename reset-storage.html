@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Local Storage</title>
+</head>
+<body>
+    <h1>Reset Local Storage</h1>
+    <p>Esta página limpiará el almacenamiento local y recargará los productos por defecto.</p>
+    <button onclick="resetStorage()">Reset Storage</button>
+    <div id="result"></div>
+
+    <script>
+        function resetStorage() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                // Limpiar localStorage
+                localStorage.removeItem('camponuevo_products');
+                localStorage.removeItem('camponuevo_categories');
+                localStorage.removeItem('camponuevo_users');
+                localStorage.removeItem('camponuevo_orders');
+                localStorage.removeItem('camponuevo_session');
+                
+                resultDiv.innerHTML = '<p style="color: green;">✅ Local Storage limpiado correctamente.</p>';
+                resultDiv.innerHTML += '<p>Recargando la página...</p>';
+                
+                // Recargar la página después de 2 segundos
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

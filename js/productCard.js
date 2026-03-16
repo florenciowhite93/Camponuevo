@@ -3,7 +3,7 @@
 // breedLabel is defined in animalIcons.js
 
 function getImageUrl(image) {
-    if (!image) return 'https://via.placeholder.com/400?text=Sin+Imagen';
+    if (!image) return 'https://placehold.co/400x300?text=Sin+Imagen';
     
     // Handle multiple images separated by semicolon - take first one
     if (typeof image === 'string' && image.includes(';')) {
@@ -26,7 +26,7 @@ function getImageUrl(image) {
     }
     
     // Default placeholder
-    return 'https://via.placeholder.com/400?text=Imagen';
+    return 'https://placehold.co/400x300?text=Imagen';
 }
 
 function buildProductCard(product, options = {}) {
@@ -98,7 +98,7 @@ function buildProductCard(product, options = {}) {
         <div class="product-card bg-white rounded-xl overflow-hidden shadow-md border border-transparent hover:border-primary flex flex-col h-full group transition duration-300 ${cardClass}" style="transform: translateY(0);">
             ${labelsHtml}
             <a href="product.html?id=${product.id}" class="block relative ${imageHeight} overflow-hidden bg-gray-100 flex items-center justify-center">
-                <img src="${getImageUrl(product.image)}" alt="${product.title}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" onerror="this.src='https://via.placeholder.com/400'">
+                <img src="${getImageUrl(product.image)}" alt="${product.title}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" onerror="this.src='https://placehold.co/400x300?text=Sin+Imagen'">
                 <div class="absolute inset-0 bg-black bg-opacity-10 group-hover:bg-opacity-0 transition"></div>
                 ${iconsHtml ? `
                     <div class="absolute bottom-2 left-2 flex flex-wrap gap-1 z-10">

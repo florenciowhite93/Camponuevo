@@ -1,8 +1,8 @@
 // js/user.js - User Profile and Order History Logic
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Check if user is logged in
-    const currentUser = getCurrentUser();
+    const currentUser = await getCurrentUser();
     
     if (!currentUser) {
         // Redirect to login or show message
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Profile Form Submit
-    profileForm.addEventListener('submit', (e) => {
+    profileForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const name = document.getElementById('profileName').value.trim();
@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const location = document.getElementById('profileLocation').value.trim();
         const identification = document.getElementById('profileIdentification').value.trim();
         
-        const result = updateUserProfile(currentUser.id, { name, phone, location, identification });
+        const result = await updateUserProfile(currentUser.id, { name, phone, location, identification });
         
         if (result.success) {
             document.getElementById('profileSuccess').classList.remove('hidden');

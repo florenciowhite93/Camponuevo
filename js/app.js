@@ -1,9 +1,9 @@
 // js/app.js
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Verify getProducts is available
-    if (typeof getProducts !== 'function') {
-        console.error('getProducts function not found! Make sure data.js is loaded before app.js');
+document.addEventListener('DOMContentLoaded', async () => {
+    // Verify getProductsAsync is available
+    if (typeof getProductsAsync !== 'function') {
+        console.error('getProductsAsync function not found! Make sure data.js is loaded before app.js');
         document.getElementById('featuredContainer').innerHTML = '<div class="col-span-full text-center text-red-500 py-8">Error: No se pudo cargar la base de datos de productos.</div>';
         return;
     }
@@ -11,10 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const featuredContainer = document.getElementById('featuredContainer');
     
     // Render featured products
-    function renderFeaturedProducts() {
+    async function renderFeaturedProducts() {
         if (!featuredContainer) return;
 
-        const allProducts = getProducts();
+        const allProducts = await getProductsAsync();
         
         // Filter products with "Productos destacados" subcategory
         const featured = allProducts.filter(p => {

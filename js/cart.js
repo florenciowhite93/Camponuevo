@@ -82,7 +82,7 @@
                     itemEl.className = 'flex gap-4 bg-white p-3 rounded-xl border border-gray-100 shadow-sm';
                     itemEl.innerHTML = `
                         <div class="w-20 h-20 flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
-                            <img src="${item.image || 'https://via.placeholder.com/100'}" alt="${item.title}" class="w-full h-full object-contain p-1">
+                            <img src="${item.image || 'https://placehold.co/100x100?text=Sin+Img'}" alt="${item.title}" class="w-full h-full object-contain p-1">
                         </div>
                         <div class="flex-1 flex flex-col justify-between">
                             <div>

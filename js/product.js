@@ -1,6 +1,6 @@
 // js/product.js
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Elements
     const loader = document.getElementById('loader');
     const productNotFound = document.getElementById('productNotFound');
@@ -40,13 +40,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const productId = params.get('id');
 
-    function loadProduct() {
+    async function loadProduct() {
         if (!productId) {
             showNotFound();
             return;
         }
 
-        const product = getProductById(productId);
+        const products = await getProductsAsync();
+        const product = products.find(p => p.id === productId);
         
         if (!product) {
             showNotFound();
@@ -84,13 +85,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (doseSection) doseSection.classList.add('hidden');
         }
 
-        // Drugs: render as bulleted list items
+        // Drugs: render as bulleted list items - handle both array and string
         if (product.drugs) {
-            // Split by common separators: semicolons, dash-lines, or commas within drug entries
-            const drugItems = product.drugs
-                .split(/[;,](?![^(]*\))/g)  // split on ; or , but not inside parentheses
-                .map(d => d.trim())
-                .filter(d => d.length > 1);
+            let drugItems;
+            if (Array.isArray(product.drugs)) {
+                drugItems = product.drugs.map(d => d.trim()).filter(d => d.length > 1);
+            } else {
+                drugItems = product.drugs
+                    .split(/[;,](?![^(]*\))/g)
+                    .map(d => d.trim())
+                    .filter(d => d.length > 1);
+            }
             
             if (drugItems.length > 1) {
                 productDrugs.innerHTML = drugItems.map(d =>
@@ -106,10 +111,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Helper function to get full image URL
         function getImageUrl(image) {
-            if (!image) return 'https://via.placeholder.com/600';
+            if (!image) return 'https://placehold.co/600x400?text=Sin+Imagen';
             if (image.startsWith('http://') || image.startsWith('https://')) return image;
-            if (image.startsWith('/img/')) return 'http://localhost:3000' + image;
-            return 'https://via.placeholder.com/600';
+            if (image.startsWith('/img/')) return window.location.origin + image;
+            return 'https://placehold.co/600x400?text=Imagen';
         }
         
         productImage.src = getImageUrl(product.image);
@@ -207,7 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 card.innerHTML = `
                     <div class="relative flex items-center justify-center bg-white p-4" style="height:160px; border-bottom: 1px solid #f0f0f0;">
-                        <img src="${p.image || 'https://via.placeholder.com/400'}" alt="${p.title}" class="w-full h-full object-contain" loading="lazy" onerror="this.src='https://via.placeholder.com/400?text=Sin+imagen'">
+                        <img src="${p.image || 'https://placehold.co/400x300?text=Sin+Imagen'}" alt="${p.title}" class="w-full h-full object-contain" loading="lazy" onerror="this.src='https://placehold.co/400x300?text=Sin+Imagen'">
                     </div>
                     <div class="p-5">
                         <div class="text-xs text-gray-500 mb-1">${p.laboratory}</div>

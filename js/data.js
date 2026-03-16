@@ -110,6 +110,23 @@ async function saveLaboratoriesToSupabase(labs) {
     }
 }
 
+async function deleteLaboratoryFromSupabase(name) {
+    if (!isSupabaseAvailable()) return false;
+    try {
+        console.log('Deleting lab from Supabase:', name);
+        const { error } = await window.supabase.from('laboratories').delete().eq('name', name);
+        if (error) {
+            console.error('Supabase delete error:', error);
+            throw error;
+        }
+        console.log('Lab deleted from Supabase successfully');
+        return true;
+    } catch (err) {
+        console.error('Error deleting lab from Supabase:', err);
+        return false;
+    }
+}
+
 // ============ HOME CATEGORIES ============
 async function getHomeCategoriesFromSupabase() {
     if (!isSupabaseAvailable()) return null;
@@ -8960,35 +8977,89 @@ let supabaseDataLoaded = false;
 
 // Initialize database
 function initDB() {
-    const data = localStorage.getItem('camponuevo_products');
-    if (!data || data === '[]') {
-        console.log('Initializing products from default data...');
-        localStorage.setItem('camponuevo_products', JSON.stringify(defaultProducts));
+    try {
+        const data = localStorage.getItem('camponuevo_products');
+        let isEmpty = !data;
+        
+        // Verificar si es un JSON válido y no está vacío
+        if (data) {
+            try {
+                const parsed = JSON.parse(data);
+                isEmpty = !parsed || parsed.length === 0;
+            } catch (e) {
+                // Si hay error al parsear, consideramos los datos corruptos
+                console.warn('Corrupted localStorage data, resetting...');
+                isEmpty = true;
+            }
+        }
+        
+        if (isEmpty) {
+            console.log('Initializing products from default data...');
+            localStorage.setItem('camponuevo_products', JSON.stringify(defaultProducts));
+        }
+    } catch (e) {
+        console.error('Error in initDB:', e);
     }
 }
 
-// Get all products (síncrono - usa caché o localStorage)
-function getProducts() {
+// Get all products - prioritize Supabase over localStorage
+async function getProductsAsync() {
     if (productsCache) return productsCache;
     
+    // Try to load from Supabase first if available
+    if (isSupabaseAvailable()) {
+        try {
+            const supabaseProducts = await getProductsFromSupabase();
+            if (supabaseProducts && supabaseProducts.length > 0) {
+                const mappedProducts = supabaseProducts.map(p => ({
+                    id: p.id, title: p.title, price: p.price, laboratory: p.laboratory,
+                    description: p.description, subCategory: p.subcategory,
+                    subCategories: p.subcategories || [], animalBreeds: p.animalbreeds || [],
+                    volumeWeight: p.volume, image: p.image, drugs: p.drugs || [],
+                    dose: p.dose, externalLink: p.externallink
+                }));
+                
+                localStorage.setItem('camponuevo_products', JSON.stringify(mappedProducts));
+                productsCache = mappedProducts;
+                console.log('Products loaded from Supabase:', mappedProducts.length);
+                return mappedProducts;
+            }
+        } catch (err) {
+            console.log('Supabase load failed, falling back to localStorage:', err.message);
+        }
+    }
+    
+    // Fallback to localStorage
     initDB();
     const data = localStorage.getItem('camponuevo_products');
     if (!data) return [];
     try {
         const products = JSON.parse(data);
-        console.log('Products loaded:', products.length);
+        console.log('Products loaded from localStorage:', products.length);
         productsCache = products;
-        
-        // Intentar cargar desde Supabase en background
-        if (!supabaseDataLoaded) {
-            loadFromSupabaseInBackground();
-        }
-        
         return products;
     } catch (e) {
         console.error('Error parsing products:', e);
         return [];
     }
+}
+
+// Sync wrapper for backward compatibility
+function getProducts() {
+    const products = getProductsAsync();
+    if (products && typeof products.then === 'function') {
+        console.warn('getProducts called synchronously but returns a Promise. Use getProductsAsync() for async access.');
+        // Return cached or localStorage while async loads
+        initDB();
+        const data = localStorage.getItem('camponuevo_products');
+        if (data) {
+            try {
+                return JSON.parse(data);
+            } catch (e) { return []; }
+        }
+        return [];
+    }
+    return products || [];
 }
 
 // Cargar datos desde Supabase en background (sin bloquear)
@@ -8998,14 +9069,19 @@ async function loadFromSupabaseInBackground() {
     try {
         const supabaseProducts = await getProductsFromSupabase();
         if (supabaseProducts && supabaseProducts.length > 0) {
-            productsCache = supabaseProducts.map(p => ({
+            const mappedProducts = supabaseProducts.map(p => ({
                 id: p.id, title: p.title, price: p.price, laboratory: p.laboratory,
                 description: p.description, subCategory: p.subcategory,
                 subCategories: p.subcategories || [], animalBreeds: p.animalbreeds || [],
                 volumeWeight: p.volume, image: p.image, drugs: p.drugs || [],
                 dose: p.dose, externalLink: p.externallink
             }));
-            console.log('Products loaded from Supabase in background');
+            
+            // Guardar en localStorage para futuras cargas
+            localStorage.setItem('camponuevo_products', JSON.stringify(mappedProducts));
+            
+            productsCache = mappedProducts;
+            console.log('Products loaded from Supabase in background and saved to localStorage');
             supabaseDataLoaded = true;
         }
     } catch (err) {
@@ -9255,18 +9331,36 @@ function initCategories() {
 let categoriesCache = null;
 let categoriesSupabaseLoaded = false;
 
-function getCategories() {
+async function getCategories() {
     if (categoriesCache) return categoriesCache;
     
-    initCategories();
-    categoriesCache = JSON.parse(localStorage.getItem('camponuevo_categories') || '[]');
-    
-    // Intentar cargar desde Supabase en background
-    if (!categoriesSupabaseLoaded) {
-        loadCategoriesFromSupabaseInBackground();
+    // Try Supabase first
+    if (isSupabaseAvailable()) {
+        try {
+            const supabaseCats = await getCategoriesFromSupabase();
+            if (supabaseCats && supabaseCats.length > 0) {
+                categoriesCache = supabaseCats;
+                console.log('Categories loaded from Supabase:', categoriesCache.length);
+                return categoriesCache;
+            }
+        } catch (err) {
+            console.warn('Error loading categories from Supabase, trying localStorage:', err.message);
+        }
     }
     
-    return categoriesCache;
+    // Fallback to localStorage
+    initCategories();
+    const data = localStorage.getItem('camponuevo_categories');
+    if (data) {
+        try {
+            categoriesCache = JSON.parse(data);
+            console.log('Categories loaded from localStorage:', categoriesCache.length);
+            return categoriesCache;
+        } catch (e) {
+            console.error('Error parsing categories:', e);
+        }
+    }
+    return [];
 }
 
 async function loadCategoriesFromSupabaseInBackground() {
@@ -9283,18 +9377,18 @@ async function loadCategoriesFromSupabaseInBackground() {
     }
 }
 
-function getCategoryById(id) {
-    const categories = getCategories();
+async function getCategoryById(id) {
+    const categories = await getCategories();
     return categories.find(c => c.id === id);
 }
 
-function getCategoryByName(name) {
-    const categories = getCategories();
+async function getCategoryByName(name) {
+    const categories = await getCategories();
     return categories.find(c => c.name.toLowerCase() === name.toLowerCase());
 }
 
-function saveCategory(categoryData) {
-    const categories = getCategories();
+async function saveCategory(categoryData) {
+    const categories = await getCategories();
     const existingIndex = categories.findIndex(c => c.id === categoryData.id);
     
     if (existingIndex !== -1) {
@@ -9303,11 +9397,22 @@ function saveCategory(categoryData) {
         categories.push(categoryData);
     }
     
+    // Guardar en localStorage
     localStorage.setItem('camponuevo_categories', JSON.stringify(categories));
+    
+    // Guardar en Supabase
+    if (isSupabaseAvailable()) {
+        try {
+            await saveCategoriesToSupabase(categories);
+            console.log('Category saved to Supabase');
+        } catch (err) {
+            console.error('Error saving category to Supabase:', err.message);
+        }
+    }
 }
 
-function addCategory(name) {
-    const categories = getCategories();
+async function addCategory(name) {
+    const categories = await getCategories();
     const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     
     if (categories.some(c => c.id === id)) {
@@ -9321,47 +9426,108 @@ function addCategory(name) {
     };
     
     categories.push(newCategory);
+    
+    // Guardar en localStorage
     localStorage.setItem('camponuevo_categories', JSON.stringify(categories));
+    
+    // Guardar en Supabase
+    if (isSupabaseAvailable()) {
+        try {
+            await saveCategoriesToSupabase(categories);
+            console.log('Category added to Supabase');
+        } catch (err) {
+            console.error('Error adding category to Supabase:', err.message);
+        }
+    }
+    
     return { success: true, category: newCategory };
 }
 
-function deleteCategory(id) {
-    const categories = getCategories();
+async function deleteCategory(id) {
+    const categories = await getCategories();
     const filtered = categories.filter(c => c.id !== id);
+    
+    // Guardar en localStorage
     localStorage.setItem('camponuevo_categories', JSON.stringify(filtered));
-}
-
-function updateCategoryName(id, newName) {
-    const categories = getCategories();
-    const index = categories.findIndex(c => c.id === id);
-    if (index !== -1) {
-        categories[index].name = newName;
-        localStorage.setItem('camponuevo_categories', JSON.stringify(categories));
+    
+    // Guardar en Supabase
+    if (isSupabaseAvailable()) {
+        try {
+            await saveCategoriesToSupabase(filtered);
+            console.log('Category deleted from Supabase');
+        } catch (err) {
+            console.error('Error deleting category from Supabase:', err.message);
+        }
     }
 }
 
-function addSubCategoryToCategory(categoryId, subCategoryName) {
-    const categories = getCategories();
+async function updateCategoryName(id, newName) {
+    const categories = await getCategories();
+    const index = categories.findIndex(c => c.id === id);
+    if (index !== -1) {
+        categories[index].name = newName;
+        
+        // Guardar en localStorage
+        localStorage.setItem('camponuevo_categories', JSON.stringify(categories));
+        
+        // Guardar en Supabase
+        if (isSupabaseAvailable()) {
+            try {
+                await saveCategoriesToSupabase(categories);
+                console.log('Category name updated in Supabase');
+            } catch (err) {
+                console.error('Error updating category name in Supabase:', err.message);
+            }
+        }
+    }
+}
+
+async function addSubCategoryToCategory(categoryId, subCategoryName) {
+    const categories = await getCategories();
     const category = categories.find(c => c.id === categoryId);
     if (category && !category.subCategories.includes(subCategoryName)) {
         category.subCategories.push(subCategoryName);
         category.subCategories.sort();
+        
+        // Guardar en localStorage
         localStorage.setItem('camponuevo_categories', JSON.stringify(categories));
+        
+        // Guardar en Supabase
+        if (isSupabaseAvailable()) {
+            try {
+                await saveCategoriesToSupabase(categories);
+                console.log('Subcategory added in Supabase');
+            } catch (err) {
+                console.error('Error adding subcategory in Supabase:', err.message);
+            }
+        }
     }
 }
 
-function removeSubCategoryFromCategory(categoryId, subCategoryName) {
-    const categories = getCategories();
+async function removeSubCategoryFromCategory(categoryId, subCategoryName) {
+    const categories = await getCategories();
     const category = categories.find(c => c.id === categoryId);
     if (category) {
         category.subCategories = category.subCategories.filter(s => s !== subCategoryName);
+        
+        // Guardar en localStorage
         localStorage.setItem('camponuevo_categories', JSON.stringify(categories));
+        
+        // Guardar en Supabase
+        if (isSupabaseAvailable()) {
+            try {
+                await saveCategoriesToSupabase(categories);
+                console.log('Subcategory removed in Supabase');
+            } catch (err) {
+                console.error('Error removing subcategory in Supabase:', err.message);
+            }
+        }
     }
 }
 
-function moveSubCategoryToCategory(subCategoryName, fromCategoryId, toCategoryId) {
-    removeSubCategoryFromCategory(fromCategoryId, subCategoryName);
-    addSubCategoryToCategory(toCategoryId, subCategoryName);
+async function moveSubCategoryToCategory(subCategoryName, fromCategoryId, toCategoryId) {
+    await removeSubCategoryFromCategory(fromCategoryId, subCategoryName);
+    await addSubCategoryToCategory(toCategoryId, subCategoryName);
 }
 
 // --- Homepage Categories Management ---
@@ -9369,24 +9535,35 @@ function moveSubCategoryToCategory(subCategoryName, fromCategoryId, toCategoryId
 let homeCategoriesCache = null;
 let homeCategoriesSupabaseLoaded = false;
 
-function getHomeCategories() {
+async function getHomeCategories() {
     if (homeCategoriesCache) return homeCategoriesCache;
     
+    // Intentar cargar desde Supabase primero
+    if (isSupabaseAvailable()) {
+        try {
+            const supabaseHomeCats = await getHomeCategoriesFromSupabase();
+            if (supabaseHomeCats && supabaseHomeCats.length > 0) {
+                homeCategoriesCache = supabaseHomeCats;
+                console.log('Home categories loaded from Supabase:', homeCategoriesCache.length);
+                return homeCategoriesCache;
+            }
+        } catch (err) {
+            console.warn('Error loading home categories from Supabase, trying localStorage:', err.message);
+        }
+    }
+    
+    // Fallback a localStorage
     initCategories();
     const stored = localStorage.getItem('camponuevo_home_categories');
     if (!stored) {
-        const cats = getCategories();
+        const cats = await getCategories();
         const defaultHome = cats.slice(0, 4).map(c => ({ id: c.id, svg: null }));
         localStorage.setItem('camponuevo_home_categories', JSON.stringify(defaultHome));
         homeCategoriesCache = defaultHome;
         return defaultHome;
     }
     homeCategoriesCache = JSON.parse(stored);
-    
-    if (!homeCategoriesSupabaseLoaded) {
-        loadHomeCategoriesFromSupabaseInBackground();
-    }
-    
+    console.log('Home categories loaded from localStorage:', homeCategoriesCache.length);
     return homeCategoriesCache;
 }
 
@@ -9412,19 +9589,19 @@ async function saveHomeCategories(categories) {
     await saveHomeCategoriesToSupabase(categories);
 }
 
-function addCategoryToHome(categoryId) {
-    const current = getHomeCategories();
+async function addCategoryToHome(categoryId) {
+    const current = await getHomeCategories();
     if (!current.some(c => c.id === categoryId)) {
         current.push({ id: categoryId, svg: null });
-        saveHomeCategories(current);
+        await saveHomeCategories(current);
     }
     return current;
 }
 
-function removeCategoryFromHome(categoryId) {
-    const current = getHomeCategories();
+async function removeCategoryFromHome(categoryId) {
+    const current = await getHomeCategories();
     const filtered = current.filter(c => c.id !== categoryId);
-    saveHomeCategories(filtered);
+    await saveHomeCategories(filtered);
     return filtered;
 }
 
@@ -9529,23 +9706,30 @@ function saveLaboratory(name) {
 }
 
 // Delete a laboratory
-function deleteLaboratory(name) {
+async function deleteLaboratory(name) {
     let labs = getLaboratories();
     labs = labs.filter(l => l !== name);
     localStorage.setItem('camponuevo_laboratories', JSON.stringify(labs));
+    laboratoriesCache = labs;
+    laboratoriesSupabaseLoaded = false; // Reset flag to allow refresh
+    await deleteLaboratoryFromSupabase(name);
 }
 
 // Update a laboratory name or delete it
-function updateLaboratoryName(oldName, newName) {
+async function updateLaboratoryName(oldName, newName) {
     let labs = getLaboratories();
     const index = labs.indexOf(oldName);
     if (index !== -1) {
         if (newName === null) {
             labs.splice(index, 1);
+            laboratoriesSupabaseLoaded = false;
+            await deleteLaboratoryFromSupabase(oldName);
         } else {
             labs[index] = newName;
+            await saveLaboratoriesToSupabase(labs);
         }
         localStorage.setItem('camponuevo_laboratories', JSON.stringify(labs));
+        laboratoriesCache = labs;
     }
 }
 
@@ -9806,77 +9990,193 @@ async function hashPassword(password) {
 
 // Register new user
 async function registerUser(userData) {
-    initUsers();
-    const users = getUsers();
-    
-    // Check if email already exists
-    const existingUser = users.find(u => u.email.toLowerCase() === userData.email.toLowerCase());
-    if (existingUser) {
-        return { success: false, message: "El email ya está registrado" };
+    // Check if Supabase is available
+    if (isSupabaseAvailable()) {
+        try {
+            // Check if email already exists in Supabase
+            const { data: existingUsers, error: checkError } = await window.supabase
+                .from('users')
+                .select('email')
+                .eq('email', userData.email.toLowerCase());
+            
+            if (checkError) throw checkError;
+            
+            if (existingUsers && existingUsers.length > 0) {
+                return { success: false, message: "El email ya está registrado" };
+            }
+            
+            // Hash password
+            const passwordHash = await hashPassword(userData.password);
+            
+            // Create user object
+            const user = {
+                id: generateId(),
+                email: userData.email,
+                passwordHash: passwordHash,
+                name: userData.name,
+                phone: "",
+                securityQuestion: "",
+                securityAnswerHash: "",
+                location: "",
+                identification: "",
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString()
+            };
+            
+            // Save to Supabase
+            const { error } = await window.supabase
+                .from('users')
+                .insert({
+                    id: user.id,
+                    email: user.email,
+                    password_hash: user.passwordHash,
+                    name: user.name,
+                    phone: user.phone,
+                    security_question: user.securityQuestion,
+                    security_answer_hash: user.securityAnswerHash,
+                    location: user.location,
+                    identification: user.identification,
+                    created_at: user.createdAt,
+                    last_login: user.lastLogin
+                });
+            
+            if (error) throw error;
+            
+            // Auto login after registration
+            sessionStorage.setItem('camponuevo_session', JSON.stringify({
+                userId: user.id,
+                rememberMe: false
+            }));
+            
+            return { success: true, user: user };
+        } catch (err) {
+            console.error('Error registering user in Supabase:', err.message);
+            return { success: false, message: "Error al registrar usuario" };
+        }
+    } else {
+        // Fallback to localStorage
+        initUsers();
+        const users = getUsers();
+        
+        // Check if email already exists
+        const existingUser = users.find(u => u.email.toLowerCase() === userData.email.toLowerCase());
+        if (existingUser) {
+            return { success: false, message: "El email ya está registrado" };
+        }
+        
+        // Hash password
+        const passwordHash = await hashPassword(userData.password);
+        
+        // Create user object (without security data initially)
+        const user = {
+            id: generateId(),
+            email: userData.email,
+            passwordHash: passwordHash,
+            name: userData.name,
+            phone: "",
+            securityQuestion: "",
+            securityAnswerHash: "",
+            location: "",
+            identification: "",
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString()
+        };
+        
+        users.push(user);
+        saveUsers(users);
+        
+        // Auto login after registration
+        sessionStorage.setItem('camponuevo_session', JSON.stringify({
+            userId: user.id,
+            rememberMe: false
+        }));
+        
+        return { success: true, user: user };
     }
-    
-    // Hash password
-    const passwordHash = await hashPassword(userData.password);
-    
-    // Create user object (without security data initially)
-    const user = {
-        id: generateId(),
-        email: userData.email,
-        passwordHash: passwordHash,
-        name: userData.name,
-        phone: "",
-        securityQuestion: "",
-        securityAnswerHash: "",
-        location: "",
-        identification: "",
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString()
-    };
-    
-    users.push(user);
-    saveUsers(users);
-    
-    // Auto login after registration
-    sessionStorage.setItem('camponuevo_session', JSON.stringify({
-        userId: user.id,
-        rememberMe: false
-    }));
-    
-    return { success: true, user: user };
 }
 
 // Login user
 async function loginUser(email, password, rememberMe = false) {
-    initUsers();
-    const users = getUsers();
-    
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (!user) {
-        return { success: false, message: "Email no registrado" };
+    // Check if Supabase is available
+    if (isSupabaseAvailable()) {
+        try {
+            // Get user from Supabase
+            const { data: users, error } = await window.supabase
+                .from('users')
+                .select('*')
+                .eq('email', email.toLowerCase());
+            
+            if (error) throw error;
+            
+            if (!users || users.length === 0) {
+                return { success: false, message: "Email no registrado" };
+            }
+            
+            const user = users[0];
+            const passwordHash = await hashPassword(password);
+            
+            if (user.password_hash !== passwordHash) {
+                return { success: false, message: "Contraseña incorrecta" };
+            }
+            
+            // Update last login in Supabase
+            const { error: updateError } = await window.supabase
+                .from('users')
+                .update({ last_login: new Date().toISOString() })
+                .eq('id', user.id);
+            
+            if (updateError) throw updateError;
+            
+            // Set session
+            const session = {
+                userId: user.id,
+                rememberMe: rememberMe
+            };
+            
+            sessionStorage.setItem('camponuevo_session', JSON.stringify(session));
+            
+            if (rememberMe) {
+                localStorage.setItem('camponuevo_session', JSON.stringify(session));
+            }
+            
+            return { success: true, user: user };
+        } catch (err) {
+            console.error('Error logging in with Supabase:', err.message);
+            return { success: false, message: "Error al iniciar sesión" };
+        }
+    } else {
+        // Fallback to localStorage
+        initUsers();
+        const users = getUsers();
+        
+        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+        if (!user) {
+            return { success: false, message: "Email no registrado" };
+        }
+        
+        const passwordHash = await hashPassword(password);
+        if (user.passwordHash !== passwordHash) {
+            return { success: false, message: "Contraseña incorrecta" };
+        }
+        
+        // Update last login
+        user.lastLogin = new Date().toISOString();
+        saveUsers(users);
+        
+        // Set session
+        const session = {
+            userId: user.id,
+            rememberMe: rememberMe
+        };
+        
+        sessionStorage.setItem('camponuevo_session', JSON.stringify(session));
+        
+        if (rememberMe) {
+            localStorage.setItem('camponuevo_session', JSON.stringify(session));
+        }
+        
+        return { success: true, user: user };
     }
-    
-    const passwordHash = await hashPassword(password);
-    if (user.passwordHash !== passwordHash) {
-        return { success: false, message: "Contraseña incorrecta" };
-    }
-    
-    // Update last login
-    user.lastLogin = new Date().toISOString();
-    saveUsers(users);
-    
-    // Set session
-    const session = {
-        userId: user.id,
-        rememberMe: rememberMe
-    };
-    
-    sessionStorage.setItem('camponuevo_session', JSON.stringify(session));
-    
-    if (rememberMe) {
-        localStorage.setItem('camponuevo_session', JSON.stringify(session));
-    }
-    
-    return { success: true, user: user };
 }
 
 // Logout user
@@ -9886,7 +10186,7 @@ function logoutUser() {
 }
 
 // Get current logged in user
-function getCurrentUser() {
+async function getCurrentUser() {
     // Check sessionStorage first
     let session = sessionStorage.getItem('camponuevo_session');
     if (!session) {
@@ -9898,8 +10198,27 @@ function getCurrentUser() {
     
     try {
         const sessionData = JSON.parse(session);
-        const users = getUsers();
-        return users.find(u => u.id === sessionData.userId) || null;
+        
+        // Check if Supabase is available
+        if (isSupabaseAvailable()) {
+            try {
+                const { data: users, error } = await window.supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', sessionData.userId);
+                
+                if (error) throw error;
+                
+                return users && users.length > 0 ? users[0] : null;
+            } catch (err) {
+                console.error('Error fetching user from Supabase:', err.message);
+                return null;
+            }
+        } else {
+            // Fallback to localStorage
+            const users = getUsers();
+            return users.find(u => u.id === sessionData.userId) || null;
+        }
     } catch (e) {
         return null;
     }
@@ -10077,7 +10396,7 @@ async function saveOrders(orders) {
 async function saveOrder(orderData) {
     initOrders();
     const orders = await getOrders();
-    const currentUser = getCurrentUser();
+    const currentUser = await getCurrentUser();
     
     const order = {
         id: orderData.id || generateId(),
@@ -10122,10 +10441,10 @@ function getSecurityQuestions() {
 
 // Exponer funciones principales globalmente
 window.getProducts = getProducts;
+window.getProductsAsync = getProductsAsync;
 window.getProductById = getProductById;
 window.saveProduct = saveProduct;
 window.deleteProduct = deleteProduct;
-window.bulkDeleteProducts = bulkDeleteProducts;
 window.getCategories = getCategories;
 window.getCategoryById = getCategoryById;
 window.saveCategory = saveCategory;

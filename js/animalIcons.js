@@ -21,7 +21,7 @@ async function loadIcon(breed) {
     if (!filename) return '';
     
     try {
-        const response = await fetch('http://localhost:3000/svg/' + filename);
+        const response = await fetch('svg/' + filename);
         if (!response.ok) throw new Error('Icon not found');
         let svg = await response.text();
         

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Supabase</title>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/data.js"></script>
+</head>
+<body>
+    <h1>Test Supabase Products</h1>
+    <div id="result"></div>
+    <script>
+        async function testSupabase() {
+            const resultDiv = document.getElementById('result');
+            let output = '<h2>Diagnóstico de Supabase y Productos</h2>';
+
+            // 1. Verificar Supabase
+            output += '<h3>1. Verificación de Supabase</h3>';
+            if (typeof window.supabase === 'undefined') {
+                output += '<p style="color: red;">❌ window.supabase es undefined</p>';
+            } else {
+                output += '<p style="color: green;">✅ window.supabase está definido</p>';
+                output += `<p>URL: ${window.supabase ? window.supabase.config ? window.supabase.config.url : 'desconocida' : 'no disponible'}</p>`;
+            }
+
+            // 2. Verificar funciones de datos
+            output += '<h3>2. Verificación de funciones</h3>';
+            if (typeof getProducts !== 'function') {
+                output += '<p style="color: red;">❌ getProducts no es una función</p>';
+            } else {
+                output += '<p style="color: green;">✅ getProducts es una función</p>';
+            }
+
+            if (typeof isSupabaseAvailable !== 'function') {
+                output += '<p style="color: red;">❌ isSupabaseAvailable no es una función</p>';
+            } else {
+                output += '<p style="color: green;">✅ isSupabaseAvailable es una función</p>';
+                const isAvail = isSupabaseAvailable();
+                output += `<p>isSupabaseAvailable(): ${isAvail}</p>`;
+            }
+
+            // 3. Obtener productos desde Supabase directamente
+            output += '<h3>3. Consulta directa a Supabase</h3>';
+            try {
+                if (typeof window.supabase === 'undefined') {
+                    output += '<p>No se puede consultar Supabase (cliente no disponible)</p>';
+                } else {
+                    const { data, error } = await window.supabase
+                        .from('products')
+                        .select('id, title, price')
+                        .limit(5);
+
+                    if (error) {
+                        output += `<p style="color: red;">❌ Error: ${error.message}</p>`;
+                    } else if (!data || data.length === 0) {
+                        output += '<p>⚠️ La tabla products está vacía o no hay permisos</p>';
+                    } else {
+                        output += `<p style="color: green;">✅ Se encontraron ${data.length} productos (mostrando 5)</p>`;
+                        output += '<ul>';
+                        data.forEach(p => {
+                            output += `<li>${p.title} - $${p.price}</li>`;
+                        });
+                        output += '</ul>';
+                    }
+                }
+            } catch (err) {
+                output += `<p style="color: red;">❌ Error en consulta: ${err.message}</p>`;
+            }
+
+            // 4. Verificar productos locales
+            output += '<h3>4. Productos en localStorage</h3>';
+            try {
+                const localData = localStorage.getItem('camponuevo_products');
+                if (!localData) {
+                    output += '<p>No hay productos en localStorage</p>';
+                } else {
+                    const parsed = JSON.parse(localData);
+                    output += `<p>Productos en localStorage: ${parsed.length}</p>`;
+                    if (parsed.length > 0) {
+                        output += '<ul>';
+                        parsed.slice(0, 3).forEach(p => {
+                            output += `<li>${p.title || p.name || 'Sin nombre'}</li>`;
+                        });
+                        output += '</ul>';
+                    }
+                }
+            } catch (err) {
+                output += `<p style="color: red;">❌ Error leyendo localStorage: ${err.message}</p>`;
+            }
+
+            resultDiv.innerHTML = output;
+        }
+
+        // Ejecutar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', testSupabase);
+    </script>
+</body>
+</html>

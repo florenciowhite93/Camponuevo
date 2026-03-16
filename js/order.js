@@ -12,7 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeInfoModal = document.getElementById('closeInfoModal');
 
     // Get current user (if logged in)
-    const currentUser = getCurrentUser();
+    let currentUser = null;
+    (async () => {
+        currentUser = await getCurrentUser();
+    })();
 
     function renderOrderItems() {
         const cart = getCart();
@@ -39,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
             itemEl.className = 'flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl hover:bg-gray-50 transition border border-transparent hover:border-gray-100';
             itemEl.innerHTML = `
                 <div class="w-24 h-24 bg-white rounded-xl overflow-hidden border border-gray-100 p-2 flex-shrink-0">
-                    <img src="${item.image || 'https://via.placeholder.com/150'}" alt="${item.title}" class="w-full h-full object-contain">
+                    <img src="${item.image || 'https://placehold.co/150x150?text=Sin+Img'}" alt="${item.title}" class="w-full h-full object-contain">
                 </div>
                 <div class="flex-1 text-center sm:text-left">
                     <h4 class="text-lg font-bold text-gray-800 mb-1 italic">${item.title}</h4>
@@ -79,7 +82,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Pre-fill form if user is logged in
-    function prefillForm() {
+    async function prefillForm() {
+        // Wait for currentUser to be loaded
+        await new Promise(resolve => {
+            const checkUser = setInterval(() => {
+                if (currentUser !== null) {
+                    clearInterval(checkUser);
+                    resolve();
+                }
+            }, 10);
+        });
+        
         if (currentUser) {
             document.getElementById('custName').value = currentUser.name || '';
             document.getElementById('custPhone').value = currentUser.phone || '';
@@ -227,5 +240,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize
     renderOrderItems();
-    prefillForm();
+    (async () => await prefillForm())();
 });
