@@ -9374,11 +9374,15 @@ function isCategoryInHome(categoryId) {
 
 // Migrar subcategorías existentes a categoría Veterinaria si no existen categorías
 function migrateSubCategoriesToCategories() {
-    const stored = localStorage.getItem('camponuevo_categories');
-    if (!stored) {
-        const subCats = getSubCategories();
-        defaultCategories[0].subCategories = subCats;
-        localStorage.setItem('camponuevo_categories', JSON.stringify(defaultCategories));
+    try {
+        const stored = localStorage.getItem('camponuevo_categories');
+        if (!stored) {
+            const subCats = getSubCategories();
+            defaultCategories[0].subCategories = subCats;
+            localStorage.setItem('camponuevo_categories', JSON.stringify(defaultCategories));
+        }
+    } catch (e) {
+        console.log('Error in migrateSubCategoriesToCategories:', e);
     }
 }
 

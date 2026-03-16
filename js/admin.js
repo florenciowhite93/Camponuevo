@@ -9,6 +9,7 @@ function getImageUrl(image) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    try {
     // Initialize categories (migrate if needed)
     migrateSubCategoriesToCategories();
     
@@ -3403,4 +3404,13 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Admin JS loaded');
     console.log('Current laboratories in localStorage:', localStorage.getItem('camponuevo_laboratories'));
     console.log('Current products in localStorage:', localStorage.getItem('camponuevo_products') ? 'present' : 'not present');
+    
+    } catch (error) {
+        console.error('Admin JS Error:', error);
+        // Even if there's an error, show the login screen
+        const loginScreen = document.getElementById('loginScreen');
+        const adminApp = document.getElementById('adminApp');
+        if (loginScreen) loginScreen.classList.remove('hidden');
+        if (adminApp) adminApp.classList.add('hidden');
+    }
 });
