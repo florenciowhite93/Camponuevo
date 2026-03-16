@@ -112,6 +112,12 @@ function convertToSupabase(products) {
         
         const price = parseFloat(product.price) || 0;
         
+        // Fix image URL - add Wix static domain prefix
+        let imageUrl = product.productImageUrl || '';
+        if (imageUrl && !imageUrl.startsWith('http')) {
+            imageUrl = 'https://static.wixstatic.com/media/' + imageUrl;
+        }
+        
         return {
             id: product.handleId || '',
             title: product.name || '',
@@ -122,7 +128,7 @@ function convertToSupabase(products) {
             subcategories: subcategories.length > 0 ? JSON.stringify(subcategories) : '',
             animalbreeds: animalBreeds.length > 0 ? JSON.stringify(animalBreeds) : '',
             volume: '',
-            image: product.productImageUrl || '',
+            image: imageUrl,
             drugs: drugs.length > 0 ? JSON.stringify(drugs) : '',
             dose: dose || '',
             externallink: (product.additionalInfoDescription2 || '').replace(/<[^>]+>/g, '').trim()
