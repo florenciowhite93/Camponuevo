@@ -53,10 +53,11 @@
 - ✅ Checkout automático con datos guardados
 - ✅ Historial de pedidos completo
 - ✅ Recuperación de contraseña segura
+- ✅ Datos almacenados en Supabase (producción)
 
 ## Notas Importantes
 
-- Los datos se almacenan en el navegador (localStorage)
-- Para usar en producción, se recomienda un backend seguro
+- Los datos de usuarios y pedidos se almacenan en **Supabase** (base de datos en la nube)
+- El código fuente se gestiona en **GitHub**
 - Los usuarios existentes deben configurar su pregunta de seguridad
 - El checkout guarda automáticamente los datos del usuario

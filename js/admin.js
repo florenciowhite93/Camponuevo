@@ -2,10 +2,10 @@
 
 // Helper function to get full image URL
 function getImageUrl(image) {
-    if (!image) return 'https://via.placeholder.com/40';
+    if (!image) return 'https://placehold.co/40x40?text=Sin+Img';
     if (image.startsWith('http://') || image.startsWith('https://')) return image;
-    if (image.startsWith('/img/')) return 'http://localhost:3000' + image;
-    return 'https://via.placeholder.com/40';
+    if (image.startsWith('/img/')) return window.location.origin + image;
+    return 'https://placehold.co/40x40?text=Img';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -69,6 +69,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const bulkSubCatsDropdown = document.getElementById('bulkSubCatsDropdown');
     const bulkSubCatsResults = document.getElementById('bulkSubCatsResults');
     let bulkSelectedSubCats = [];
+    
+    // Bulk Delete Modal Elements
+    const bulkDeleteModal = document.getElementById('bulkDeleteModal');
+    const btnCloseBulkDeleteModal = document.getElementById('btnCloseBulkDeleteModal');
+    const btnCancelBulkDelete = document.getElementById('btnCancelBulkDelete');
+    const btnConfirmBulkDelete = document.getElementById('btnConfirmBulkDelete');
+    const bulkDeleteCount = document.getElementById('bulkDeleteCount');
+    const bulkDeleteConfirmInput = document.getElementById('bulkDeleteConfirmInput');
+    const btnBulkDelete = document.getElementById('btnBulkDelete');
     
     // Auth & Filter Elements
     const loginScreen = document.getElementById('loginScreen');
@@ -2522,7 +2531,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Laboratorio para imagen:', laboratorio, '| Producto:', productTitle);
 
         // Determine final image string
-        let finalImage = 'https://via.placeholder.com/600';
+        let finalImage = 'https://placehold.co/600x400?text=Sin+Imagen';
         
         // Si hay un archivo pendiente por subir al servidor
         if (pendingImageFile) {
@@ -2663,35 +2672,44 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsDataURL(file);
     }
 
-    // Función para subir imagen al servidor
+    // Función para subir imagen al servidor (Supabase Storage)
     async function uploadImageToServer(file, laboratorio, productTitle) {
         console.log('uploadImageToServer - Laboratorio:', laboratorio, '| Producto:', productTitle);
-        return new Promise((resolve, reject) => {
-            const formData = new FormData();
-            formData.append('imagen', file);
-            formData.append('laboratorio', laboratorio || 'otros');
-            formData.append('producto', productTitle || '');
-            console.log('FormData - Laboratorio:', laboratorio || 'otros', '| Producto:', productTitle || '');
-
-            fetch('http://localhost:3000/api/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Usar la ruta que devuelve el servidor
-                    // Ya incluye el laboratorio como prefijo en el nombre del archivo
-                    resolve(data.path);
-                } else {
-                    reject(new Error(data.message || 'Error al subir imagen'));
-                }
-            })
-            .catch(error => {
-                console.error('Error upload:', error);
-                reject(error);
-            });
-        });
+        
+        // Check if Supabase is available
+        if (!isSupabaseAvailable()) {
+            throw new Error('Supabase no disponible');
+        }
+        
+        const labFolder = (laboratorio || 'otros').replace(/[^a-zA-Z0-9]/g, '_');
+        const productName = (productTitle || 'producto').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
+        const timestamp = Date.now();
+        const fileName = `${labFolder}_${productName}_${timestamp}.${file.name.split('.').pop()}`;
+        
+        try {
+            const { data, error } = await window.supabase.storage
+                .from('product-images')
+                .upload(fileName, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+            
+            if (error) {
+                console.error('Supabase upload error:', error);
+                throw new Error(error.message);
+            }
+            
+            // Get public URL
+            const { data: urlData } = window.supabase.storage
+                .from('product-images')
+                .getPublicUrl(fileName);
+            
+            console.log('Imagen subida a Supabase:', urlData.publicUrl);
+            return urlData.publicUrl;
+        } catch (err) {
+            console.error('Error al subir imagen a Supabase:', err);
+            throw err;
+        }
     }
 
     function setDropzonePreview(imgSrc) {
@@ -3154,6 +3172,72 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Bulk Delete Products Logic ---
+    if (btnBulkDelete) {
+        btnBulkDelete.addEventListener('click', () => {
+            if (selectedProductIds.size === 0) return;
+            
+            bulkDeleteCount.textContent = selectedProductIds.size;
+            bulkDeleteConfirmInput.value = '';
+            btnConfirmBulkDelete.disabled = true;
+            bulkDeleteModal.classList.remove('hidden');
+        });
+    }
+
+    // Confirm delete input validation
+    if (bulkDeleteConfirmInput) {
+        bulkDeleteConfirmInput.addEventListener('input', (e) => {
+            const confirmText = e.target.value.trim().toUpperCase();
+            btnConfirmBulkDelete.disabled = confirmText !== 'ELIMINAR';
+        });
+    }
+
+    // Close modal handlers
+    if (btnCloseBulkDeleteModal) {
+        btnCloseBulkDeleteModal.addEventListener('click', () => {
+            bulkDeleteModal.classList.add('hidden');
+        });
+    }
+
+    if (btnCancelBulkDelete) {
+        btnCancelBulkDelete.addEventListener('click', () => {
+            bulkDeleteModal.classList.add('hidden');
+        });
+    }
+
+    // Confirm delete
+    if (btnConfirmBulkDelete) {
+        btnConfirmBulkDelete.addEventListener('click', () => {
+            const confirmText = bulkDeleteConfirmInput.value.trim().toUpperCase();
+            if (confirmText !== 'ELIMINAR') {
+                alert('Por favor escribe ELIMINAR para confirmar.');
+                return;
+            }
+
+            const productsToDelete = Array.from(selectedProductIds);
+            const allProducts = getProducts();
+            const remainingProducts = allProducts.filter(p => !productsToDelete.includes(p.id));
+            
+            saveAllProducts(remainingProducts);
+            
+            alert(`¡Se han eliminado ${productsToDelete.length} productos exitosamente!`);
+            bulkDeleteModal.classList.add('hidden');
+            
+            selectedProductIds.clear();
+            renderProducts();
+            updateBulkToolbarVisibility();
+        });
+    }
+
+    // Close modal on outside click
+    if (bulkDeleteModal) {
+        bulkDeleteModal.addEventListener('click', (e) => {
+            if (e.target === bulkDeleteModal) {
+                bulkDeleteModal.classList.add('hidden');
+            }
+        });
+    }
+
     // --- Orders Management Functions ---
     
     function renderOrders() {
@@ -3321,7 +3405,7 @@ document.addEventListener('DOMContentLoaded', () => {
             row.innerHTML = `
                 <td class="px-4 py-3">
                     <div class="flex items-center gap-3">
-                        <img src="${item.image || 'https://via.placeholder.com/40'}" alt="${item.title}" class="w-10 h-10 object-contain bg-white rounded border border-gray-100">
+                        <img src="${item.image || 'https://placehold.co/40x40?text=Sin+Img'}" alt="${item.title}" class="w-10 h-10 object-contain bg-white rounded border border-gray-100">
                         <div>
                             <div class="font-medium text-gray-800">${item.title}</div>
                             <div class="text-xs text-gray-500">${item.laboratory}</div>

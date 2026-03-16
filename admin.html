@@ -170,6 +170,9 @@
                     <button id="btnBulkSubCats" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1.5 px-3 rounded shadow transition flex items-center whitespace-nowrap ml-2">
                         <i class="fas fa-folder mr-1.5"></i> Agregar Sub-cats
                     </button>
+                    <button id="btnBulkDelete" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1.5 px-3 rounded shadow transition flex items-center whitespace-nowrap ml-2">
+                        <i class="fas fa-trash-alt mr-1.5"></i> Eliminar
+                    </button>
                 </div>
 
                 <div class="w-full md:w-auto flex items-center gap-3">
@@ -765,6 +768,41 @@
         </div>
     </div>
 
+    <!-- Modal para eliminación masiva de productos -->
+    <div id="bulkDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-red-50">
+                <h3 class="text-xl font-bold text-red-800">Eliminar Productos Seleccionados</h3>
+                <button id="btnCloseBulkDeleteModal" class="text-gray-400 hover:text-red-500 transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                    <p class="text-sm text-red-700 font-medium">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Esta acción no se puede deshacer.
+                    </p>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">
+                    Se eliminarán <span id="bulkDeleteCount" class="font-bold text-gray-800">0</span> productos seleccionados del catálogo.
+                </p>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Escribe <span class="font-bold text-red-600">ELIMINAR</span> para confirmar:
+                    </label>
+                    <input type="text" id="bulkDeleteConfirmInput" placeholder="Escribe ELIMINAR" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm">
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+                <button id="btnCancelBulkDelete" type="button" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">Cancelar</button>
+                <button id="btnConfirmBulkDelete" type="button" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fas fa-trash-alt mr-2"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Detalles de Pedido -->
     <div id="orderDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -1139,6 +1177,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/data.js"></script>
     <script src="js/admin.js"></script>
