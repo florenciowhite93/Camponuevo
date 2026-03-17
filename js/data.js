@@ -10088,7 +10088,7 @@ async function registerUser(userData) {
     // Check if Supabase Auth is available
     if (isSupabaseAvailable() && window.supabase.auth) {
         try {
-            // Sign up with Supabase Auth (auto-confirm for now, no email verification required)
+            // Sign up with Supabase Auth - email verification required
             const { data, error } = await window.supabase.auth.signUp({
                 email: userData.email.toLowerCase(),
                 password: userData.password,
@@ -10096,7 +10096,7 @@ async function registerUser(userData) {
                     data: {
                         name: userData.name
                     },
-                    emailRedirectTo: undefined // Disable email confirmation redirect
+                    emailRedirectTo: window.location.origin + '/verify-email.html'
                 }
             });
             
@@ -10108,7 +10108,31 @@ async function registerUser(userData) {
                 throw error;
             }
             
-            // Generate a user ID (either from Supabase auth or create our own)
+            // Check if email confirmation is required
+            if (data.user && !data.session) {
+                // Email confirmation required - save user to users table with pending status
+                try {
+                    await window.supabase.from('users').upsert({
+                        id: data.user.id,
+                        email: userData.email.toLowerCase(),
+                        name: userData.name,
+                        password_hash: await hashPassword(userData.password),
+                        created_at: new Date().toISOString(),
+                        email_verified: false
+                    });
+                    console.log('User saved to Supabase users table (pending verification)');
+                } catch (saveErr) {
+                    console.warn('Could not save to users table:', saveErr.message);
+                }
+                
+                return { 
+                    success: true, 
+                    requiresEmailVerification: true,
+                    message: "Se ha enviado un correo de verificación a tu bandeja de entrada. Por favor, haz clic en el enlace para activar tu cuenta." 
+                };
+            }
+            
+            // If no confirmation required (auto-confirm)
             const userId = data.user ? data.user.id : generateId();
             
             // Save user data to Supabase users table
@@ -10119,14 +10143,15 @@ async function registerUser(userData) {
                     name: userData.name,
                     password_hash: await hashPassword(userData.password),
                     created_at: new Date().toISOString(),
-                    last_login: new Date().toISOString()
+                    last_login: new Date().toISOString(),
+                    email_verified: true
                 });
                 console.log('User saved to Supabase users table');
             } catch (saveErr) {
                 console.warn('Could not save to users table:', saveErr.message);
             }
             
-            // Auto-login after registration (set session)
+            // Auto-login after registration
             sessionStorage.setItem('camponuevo_session', JSON.stringify({
                 userId: userId,
                 rememberMe: false
@@ -10187,6 +10212,30 @@ async function registerUserLocal(userData) {
     return { success: true, user: user };
 }
 
+// Resend verification email
+async function resendVerificationEmail(email) {
+    if (!isSupabaseAvailable() || !window.supabase.auth) {
+        return { success: false, message: "Supabase no está disponible" };
+    }
+    
+    try {
+        const { error } = await window.supabase.auth.resend({
+            type: 'signup',
+            email: email.toLowerCase()
+        });
+        
+        if (error) {
+            console.error('Error resending verification email:', error.message);
+            return { success: false, message: error.message };
+        }
+        
+        return { success: true, message: "Correo de verificación enviado" };
+    } catch (err) {
+        console.error('Error resending verification email:', err.message);
+        return { success: false, message: err.message };
+    }
+}
+
 // Login user
 async function loginUser(email, password, rememberMe = false) {
     const emailLower = email.toLowerCase();
@@ -10228,6 +10277,15 @@ async function loginUser(email, password, rememberMe = false) {
                 }
                 
                 return { success: true, user: data.user };
+            }
+            
+            // Check if error is due to email not confirmed
+            if (error && error.message && error.message.toLowerCase().includes('email not confirmed')) {
+                return { 
+                    success: false, 
+                    needsEmailVerification: true,
+                    message: "Debes verificar tu correo electrónico antes de iniciar sesión" 
+                };
             }
             
             // If Supabase Auth fails, try to authenticate with users table directly
@@ -10740,6 +10798,7 @@ window.clearCart = clearCart;
 window.getSecurityQuestions = getSecurityQuestions;
 window.generateId = generateId;
 window.hashPassword = hashPassword;
+window.resendVerificationEmail = resendVerificationEmail;
 
 // Listen for Supabase Auth state changes (email verification, etc.)
 if (typeof window !== 'undefined') {

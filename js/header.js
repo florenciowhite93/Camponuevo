@@ -531,7 +531,35 @@
                     }
                 } else {
                     document.getElementById('loginError').classList.remove('hidden');
-                    document.getElementById('loginErrorMessage').textContent = result.message;
+                    
+                    // Check if it's an email not verified error - show resend button
+                    if (result.needsEmailVerification) {
+                        document.getElementById('loginErrorMessage').innerHTML = `
+                            ${result.message}
+                            <button type="button" id="btnResendVerification" class="block mt-2 text-sm text-primary hover:underline">
+                                Re-enviar correo de verificación
+                            </button>
+                        `;
+                        
+                        // Add resend verification email handler
+                        document.getElementById('btnResendVerification').addEventListener('click', async () => {
+                            const btn = document.getElementById('btnResendVerification');
+                            btn.disabled = true;
+                            btn.textContent = 'Enviando...';
+                            
+                            const resendResult = await resendVerificationEmail(email);
+                            
+                            if (resendResult.success) {
+                                btn.textContent = '¡Correo enviado! Revisa tu bandeja de entrada';
+                                btn.classList.add('text-green-600');
+                            } else {
+                                btn.textContent = 'Error al enviar. Intenta de nuevo.';
+                                btn.disabled = false;
+                            }
+                        });
+                    } else {
+                        document.getElementById('loginErrorMessage').textContent = result.message;
+                    }
                 }
             });
         }
@@ -567,9 +595,14 @@
                 
                 if (result.success) {
                     closeAuthModal();
-                    await updateAuthUI();
-                    // Show success message
-                    alert('¡Cuenta creada exitosamente! Completa tu perfil para acceder a todas las funcionalidades.');
+                    
+                    // Check if email confirmation is required
+                    if (result.requiresEmailVerification) {
+                        alert(result.message);
+                    } else {
+                        await updateAuthUI();
+                        alert('¡Cuenta creada exitosamente! Completa tu perfil para acceder a todas las funcionalidades.');
+                    }
                 } else {
                     document.getElementById('registerError').classList.remove('hidden');
                     document.getElementById('registerErrorMessage').textContent = result.message;
