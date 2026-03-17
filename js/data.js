@@ -9175,6 +9175,7 @@ async function saveProductToSupabase(product) {
 function deleteProduct(id) {
     let products = getProducts();
     products = products.filter(p => p.id !== id);
+    productsCache = products;
     localStorage.setItem('camponuevo_products', JSON.stringify(products));
     
     // Also delete from Supabase
