@@ -710,7 +710,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Sub-category UI Management ---
-    function renderSubCategories() {
+    async function renderSubCategories() {
         if (!subCatsContainer) return;
         const cats = getSubCategories();
         subCatsContainer.innerHTML = '';
@@ -735,7 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Laboratory UI Management ---
-    function renderLaboratories() {
+    async function renderLaboratories() {
         if (!labsContainer) return;
         const labs = getLaboratories();
         labsContainer.innerHTML = '';
@@ -760,7 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Label UI Management ---
-    function renderLabels() {
+    async function renderLabels() {
         if (!labelsContainer) return;
         const labelsData = typeof getLabels === 'function' ? getLabels() : [];
         labelsContainer.innerHTML = '';
@@ -1022,24 +1022,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    window.handleDeleteLab = function(name) {
+    window.handleDeleteLab = async function(name) {
         if (confirm(`¿Estás seguro de eliminar el laboratorio "${name}"?`)) {
-            deleteLaboratory(name);
-            renderLaboratories();
+            await deleteLaboratory(name);
+            await renderLaboratories();
             initFilters(getProducts());
         }
     };
 
     // Expose delete handler globally for onclick
-    window.handleDeleteSubCat = function(name) {
+    window.handleDeleteSubCat = async function(name) {
         if (confirm(`¿Estás seguro de eliminar la sub-categoría "${name}"?`)) {
             deleteSubCategory(name);
-            renderSubCategories();
+            await renderSubCategories();
             initFilters(getProducts()); // Refresh dropdowns
         }
     };
 
-    window.handleDeleteLabel = function(name) {
+    window.handleDeleteLabel = async function(name) {
         if (confirm(`¿Estás seguro de eliminar la etiqueta "${name}"?`)) {
             if (typeof deleteLabel === 'function') deleteLabel(name);
             renderLabels();
@@ -1165,7 +1165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Edit Sub-Category Name Modal ---
-    window.openEditSubCatNameModal = function(subCatName) {
+    window.openEditSubCatNameModal = async function(subCatName) {
         currentEditingSubCat = subCatName;
         editSubCatNameInput.value = subCatName;
         editSubCatNameModal.classList.remove('hidden');
@@ -1219,7 +1219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editLabNameModal = document.getElementById('editLabNameModal');
     const editLabNameInput = document.getElementById('editLabNameInput');
 
-    window.openEditLabNameModal = function(labName) {
+    window.openEditLabNameModal = async function(labName) {
         currentEditingLabName = labName;
         editLabNameInput.value = labName;
         editLabNameModal.classList.remove('hidden');
@@ -1266,7 +1266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editLabelColorValue = document.getElementById('editLabelColorValue');
     const editLabelColorPalette = document.getElementById('editLabelColorPalette');
 
-    window.openEditLabelNameModal = function(labelName, labelColor) {
+    window.openEditLabelNameModal = async function(labelName, labelColor) {
         currentEditingLabelName = labelName;
         currentEditingLabelColor = labelColor;
         editLabelNameInput.value = labelName;

@@ -9283,18 +9283,29 @@ async function saveSubCategory(name) {
 }
 
 // Delete a sub-category
-function deleteSubCategory(name) {
+async function deleteSubCategory(name) {
     let cats = getSubCategories();
     cats = cats.filter(c => c !== name);
+    subCategoriesCache = cats;
     localStorage.setItem('camponuevo_subcategories', JSON.stringify(cats));
+    
+    if (isSupabaseAvailable()) {
+        try {
+            await window.supabase.from('subcategories').delete().eq('name', name);
+            console.log('Subcategory deleted from Supabase:', name);
+        } catch (err) {
+            console.error('Error deleting subcategory from Supabase:', err.message);
+        }
+    }
 }
 
 // Update a sub-category name
-function updateSubCategoryName(oldName, newName) {
+async function updateSubCategoryName(oldName, newName) {
     let cats = getSubCategories();
     const index = cats.indexOf(oldName);
     if (index !== -1) {
         cats[index] = newName;
+        subCategoriesCache = cats;
         localStorage.setItem('camponuevo_subcategories', JSON.stringify(cats));
     }
 }
@@ -9907,9 +9918,10 @@ function renameLabelGlobal(oldName, newName) {
 }
 
 // Delete a label
-function deleteLabel(name) {
+async function deleteLabel(name) {
     let labels = getLabels();
     labels = labels.filter(l => l.name !== name);
+    labelsCache = labels;
     localStorage.setItem('camponuevo_labels', JSON.stringify(labels));
     
     // Also remove from all products for consistency
@@ -9920,6 +9932,15 @@ function deleteLabel(name) {
             saveProduct(p);
         }
     });
+    
+    if (isSupabaseAvailable()) {
+        try {
+            await window.supabase.from('labels').delete().eq('name', name);
+            console.log('Label deleted from Supabase:', name);
+        } catch (err) {
+            console.error('Error deleting label from Supabase:', err.message);
+        }
+    }
 }
 
 // Update a label name
