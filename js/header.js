@@ -600,8 +600,16 @@
                 
                 if (result.success) {
                     closeAuthModal();
-                    await updateAuthUI();
-                    // Show success message
+                    
+                    // Check if email confirmation is required
+                    if (result.requiresEmailConfirmation) {
+                        // Show success message with email verification notice
+                        alert(result.message);
+                    } else {
+                        await updateAuthUI();
+                        alert('¡Cuenta creada exitosamente! Completa tu perfil para acceder a todas las funcionalidades.');
+                    }
+                } else {
                     alert('¡Cuenta creada exitosamente! Completa tu perfil para acceder a todas las funcionalidades.');
                 } else {
                     document.getElementById('registerError').classList.remove('hidden');
@@ -780,11 +788,30 @@
             const cartScript = document.createElement('script');
             cartScript.src = 'js/cart.js';
             cartScript.onload = function() {
-                document.dispatchEvent(new CustomEvent('headerLoaded'));
+                // Wait for data.js functions to be available
+                waitForDataFunctions();
             };
             document.body.appendChild(cartScript);
         } else {
-            document.dispatchEvent(new CustomEvent('headerLoaded'));
+            waitForDataFunctions();
+        }
+        
+        function waitForDataFunctions() {
+            let attempts = 0;
+            const maxAttempts = 50;
+            
+            function checkFunctions() {
+                attempts++;
+                if (typeof registerUser === 'function' && typeof loginUser === 'function' && typeof getCurrentUser === 'function') {
+                    document.dispatchEvent(new CustomEvent('headerLoaded'));
+                } else if (attempts < maxAttempts) {
+                    setTimeout(checkFunctions, 100);
+                } else {
+                    console.error('Timeout waiting for data.js functions');
+                    document.dispatchEvent(new CustomEvent('headerLoaded'));
+                }
+            }
+            checkFunctions();
         }
     } else {
         console.error('SHARED_HEADER_HTML not found. Make sure components/header_content.js is loaded.');

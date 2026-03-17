@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificando correo - Camponuevo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+    <div class="text-center">
+        <div id="loading" class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">Verificando tu correo electrónico</h1>
+        <p class="text-gray-600" id="statusMessage">Por favor espera...</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://itlczokcdxgzgqrortpm.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0bGN6b2tjZHhnemdxcm9ydHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0OTcwMDAsImV4cCI6MjA2MTA3MzAwMH0.K4AXxMHVd0VqeFR9gUGMSyq-zVYHj4pH1vsH5KGTFqc';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        async function handleEmailVerification() {
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const accessToken = hashParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token');
+            const type = hashParams.get('type');
+            
+            console.log('Hash params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+            
+            if (accessToken && refreshToken) {
+                try {
+                    const { data, error } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken
+                    });
+                    
+                    if (error) throw error;
+                    
+                    console.log('Session set successfully:', data);
+                    
+                    const statusMessage = document.getElementById('statusMessage');
+                    const loading = document.getElementById('loading');
+                    
+                    if (type === 'signup' || type === 'email_change') {
+                        loading.className = 'fas fa-check-circle text-6xl text-green-500 mx-auto mb-4';
+                        statusMessage.innerHTML = `
+                            <span class="text-green-600 font-bold">¡Tu correo ha sido verificado!</span><br>
+                            Ahora puedes <a href="index.html" class="text-primary font-bold hover:underline">iniciar sesión</a> con tu cuenta.
+                        `;
+                    } else if (type === 'recovery') {
+                        loading.className = 'fas fa-key text-6xl text-green-500 mx-auto mb-4';
+                        statusMessage.innerHTML = `
+                            <span class="text-green-600 font-bold">¡Sesión verificada!</span><br>
+                            Ahora puedes cambiar tu contraseña.
+                        `;
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 2000);
+                    }
+                } catch (err) {
+                    console.error('Error setting session:', err);
+                    showError('Error al verificar el correo: ' + err.message);
+                }
+            } else {
+                // Check URL search params (for some Supabase configurations)
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('token');
+                const email = urlParams.get('email');
+                
+                if (token) {
+                    // Try to verify with token
+                    try {
+                        const { data, error } = await supabase.auth.verifyOtp({
+                            token: token,
+                            email: email,
+                            type: 'email_change'
+                        });
+                        
+                        if (error) throw error;
+                        
+                        showSuccess();
+                    } catch (err) {
+                        showError('Error al verificar: ' + err.message);
+                    }
+                } else {
+                    // No token found, just show info
+                    const statusMessage = document.getElementById('statusMessage');
+                    statusMessage.innerHTML = `
+                        Si haces clic en un enlace de verificación de correo, serás redirigido aquí.<br>
+                        <a href="index.html" class="text-primary font-bold hover:underline">Volver al inicio</a>
+                    `;
+                    document.getElementById('loading').style.display = 'none';
+                }
+            }
+        }
+        
+        function showSuccess() {
+            const statusMessage = document.getElementById('statusMessage');
+            const loading = document.getElementById('loading');
+            
+            loading.className = 'fas fa-check-circle text-6xl text-green-500 mx-auto mb-4';
+            statusMessage.innerHTML = `
+                <span class="text-green-600 font-bold">¡Tu correo ha sido verificado!</span><br>
+                Ahora puedes <a href="index.html" class="text-primary font-bold hover:underline">iniciar sesión</a> con tu cuenta.
+            `;
+        }
+        
+        function showError(message) {
+            const statusMessage = document.getElementById('statusMessage');
+            const loading = document.getElementById('loading');
+            
+            loading.className = 'fas fa-exclamation-circle text-6xl text-red-500 mx-auto mb-4';
+            statusMessage.innerHTML = `
+                <span class="text-red-600 font-bold">Error</span><br>
+                ${message}<br>
+                <a href="index.html" class="text-primary font-bold hover:underline">Volver al inicio</a>
+            `;
+        }
+        
+        handleEmailVerification();
+    </script>
+</body>
+</html>

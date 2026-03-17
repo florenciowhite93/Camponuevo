@@ -9,7 +9,13 @@
         script.onload = function() {
             window.supabase = window.supabase.createClient(
                 'https://itlczokcdxgzgqrortpm.supabase.co',
-                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0bGN6b2tjZHhnemdxcm9ydHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0OTcwMDAsImV4cCI6MjA2MTA3MzAwMH0.K4AXxMHVd0VqeFR9gUGMSyq-zVYHj4pH1vsH5KGTFqc'
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0bGN6b2tjZHhnemdxcm9ydHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0OTcwMDAsImV4cCI6MjA2MTA3MzAwMH0.K4AXxMHVd0VqeFR9gUGMSyq-zVYHj4pH1vsH5KGTFqc',
+                {
+                    auth: {
+                        // URL de verificación de email (página estática)
+                        emailRedirectTo: window.location.origin + '/verify-email.html'
+                    }
+                }
             );
             console.log('Supabase client initialized from data.js');
             window.supabaseReady = true;
@@ -10086,81 +10092,102 @@ async function hashPassword(password) {
     return hash.toString();
 }
 
-// Register new user
+// Register new user with email verification
 async function registerUser(userData) {
-    // Check if Supabase is available
-    if (isSupabaseAvailable()) {
+    // Check if Supabase Auth is available
+    if (isSupabaseAvailable() && window.supabase.auth) {
         try {
-            // Check if email already exists in Supabase
-            const { data: existingUsers, error: checkError } = await window.supabase
-                .from('users')
-                .select('email')
-                .eq('email', userData.email.toLowerCase());
-            
-            if (checkError) throw checkError;
-            
-            if (existingUsers && existingUsers.length > 0) {
-                return { success: false, message: "El email ya está registrado" };
-            }
-            
-            // Hash password
-            const passwordHash = await hashPassword(userData.password);
-            
-            // Create user object with all fields
-            const userId = generateId();
-            const now = new Date().toISOString();
-            
-            // Build user object for Supabase
-            const userDataForSupabase = {
-                id: userId,
+            // Sign up with Supabase Auth (this sends verification email)
+            const { data, error } = await window.supabase.auth.signUp({
                 email: userData.email.toLowerCase(),
-                name: userData.name,
-                phone: "",
-                created_at: now,
-                last_login: now
-            };
-            
-            // Add optional fields if they exist in the table
-            userDataForSupabase.password_hash = passwordHash;
-            
-            // Save to Supabase
-            const { error } = await window.supabase
-                .from('users')
-                .insert(userDataForSupabase);
+                password: userData.password,
+                options: {
+                    data: {
+                        name: userData.name
+                    }
+                }
+            });
             
             if (error) {
-                // If the error is about missing columns, try without optional fields
-                console.warn('Error inserting user, trying with minimal fields:', error.message);
-                
-                const minimalUserData = {
-                    id: userId,
-                    email: userData.email.toLowerCase(),
-                    name: userData.name,
-                    created_at: now
-                };
-                
-                const { error: minimalError } = await window.supabase
-                    .from('users')
-                    .insert(minimalUserData);
-                
-                if (minimalError) throw minimalError;
-                
-                // Also save to localStorage as fallback
-                initUsers();
-                const users = getUsers();
-                users.push({
-                    id: userId,
-                    email: userData.email,
-                    passwordHash: passwordHash,
-                    name: userData.name,
-                    phone: "",
-                    createdAt: now,
-                    lastLogin: now
-                });
-                saveUsers(users);
+                // Check if user already exists
+                if (error.message.includes('already registered') || error.message.includes('already been registered')) {
+                    return { success: false, message: "El email ya está registrado" };
+                }
+                throw error;
             }
             
-            // Auto login after registration
+            // If email confirmation is required
+            if (data.user && !data.session) {
+                return { 
+                    success: true, 
+                    requiresEmailConfirmation: true,
+                    message: "Se ha enviado un correo de verificación a tu bandeja de entrada. Por favor, haz clic en el enlace para activar tu cuenta." 
+                };
+            }
+            
+            // If email confirmation is not required (auto-confirm)
+            if (data.session) {
+                // Save additional user data to users table
+                await window.supabase.from('users').upsert({
+                    id: data.user.id,
+                    email: userData.email.toLowerCase(),
+                    name: userData.name,
+                    created_at: new Date().toISOString(),
+                    email_confirmed: true
+                });
+                
+                return { success: true, user: data.user };
+            }
+            
+            return { success: true, message: "Registro exitoso" };
+        } catch (err) {
+            console.error('Error registering user with Supabase Auth:', err.message);
+            return { success: false, message: "Error al registrar usuario: " + err.message };
+        }
+    } else {
+        // Fallback to local registration (without email verification)
+        return await registerUserLocal(userData);
+    }
+}
+
+// Local registration fallback
+async function registerUserLocal(userData) {
+    // Initialize and check existing users
+    initUsers();
+    const users = getUsers();
+    
+    // Check if email already exists
+    const existingUser = users.find(u => u.email.toLowerCase() === userData.email.toLowerCase());
+    if (existingUser) {
+        return { success: false, message: "El email ya está registrado" };
+    }
+    
+    // Hash password
+    const passwordHash = await hashPassword(userData.password);
+    
+    // Create user object
+    const user = {
+        id: generateId(),
+        email: userData.email,
+        passwordHash: passwordHash,
+        name: userData.name,
+        phone: "",
+        createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+        emailVerified: true
+    };
+    
+    users.push(user);
+    saveUsers(users);
+    
+    // Auto login after registration
+    sessionStorage.setItem('camponuevo_session', JSON.stringify({
+        userId: user.id,
+        rememberMe: false
+    }));
+    
+    return { success: true, user: user };
+}
             sessionStorage.setItem('camponuevo_session', JSON.stringify({
                 userId: userId,
                 rememberMe: false
@@ -10215,97 +10242,92 @@ async function registerUser(userData) {
 
 // Login user
 async function loginUser(email, password, rememberMe = false) {
-    // Check if Supabase is available
-    if (isSupabaseAvailable()) {
+    // Check if Supabase Auth is available
+    if (isSupabaseAvailable() && window.supabase.auth) {
         try {
-            // Get user from Supabase
-            const { data: users, error } = await window.supabase
-                .from('users')
-                .select('*')
-                .eq('email', email.toLowerCase());
+            // Sign in with Supabase Auth
+            const { data, error } = await window.supabase.auth.signInWithPassword({
+                email: email.toLowerCase(),
+                password: password
+            });
             
-            if (error) throw error;
-            
-            if (!users || users.length === 0) {
-                return { success: false, message: "Email no registrado" };
+            if (error) {
+                // Check specific error messages
+                if (error.message.includes('Invalid login credentials')) {
+                    return { success: false, message: "Email o contraseña incorrectos" };
+                }
+                if (error.message.includes('Email not confirmed')) {
+                    return { success: false, message: "Debes verificar tu correo electrónico antes de iniciar sesión" };
+                }
+                throw error;
             }
             
-            const user = users[0];
-            
-            // Check if password_hash column exists and has a value
-            if (user.password_hash) {
-                const passwordHash = await hashPassword(password);
+            if (data.user) {
+                // Update last login in users table
+                try {
+                    await window.supabase
+                        .from('users')
+                        .upsert({
+                            id: data.user.id,
+                            email: data.user.email,
+                            last_login: new Date().toISOString()
+                        });
+                } catch (e) {
+                    console.warn('Could not update last_login:', e.message);
+                }
                 
-                if (user.password_hash !== passwordHash) {
-                    return { success: false, message: "Contraseña incorrecta" };
-                }
-            } else {
-                // Fallback: check if password is stored in localStorage (legacy)
-                const localUsers = getUsers();
-                const localUser = localUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-                if (!localUser) {
-                    return { success: false, message: "Usuario no encontrado" };
+                // Set session
+                const session = {
+                    userId: data.user.id,
+                    rememberMe: rememberMe
+                };
+                
+                sessionStorage.setItem('camponuevo_session', JSON.stringify(session));
+                
+                if (rememberMe) {
+                    localStorage.setItem('camponuevo_session', JSON.stringify(session));
                 }
                 
-                const passwordHash = await hashPassword(password);
-                if (localUser.passwordHash !== passwordHash) {
-                    return { success: false, message: "Contraseña incorrecta" };
-                }
+                return { success: true, user: data.user };
             }
             
-            // Update last login in Supabase (if column exists)
-            try {
-                await window.supabase
-                    .from('users')
-                    .update({ last_login: new Date().toISOString() })
-                    .eq('id', user.id);
-            } catch (e) {
-                console.warn('Could not update last_login:', e.message);
-            }
-            
-            // Set session
-            const session = {
-                userId: user.id,
-                rememberMe: rememberMe
-            };
-            
-            sessionStorage.setItem('camponuevo_session', JSON.stringify(session));
-            
-            if (rememberMe) {
-                localStorage.setItem('camponuevo_session', JSON.stringify(session));
-            }
-            
-            return { success: true, user: user };
+            return { success: false, message: "Error al iniciar sesión" };
         } catch (err) {
-            console.error('Error logging in with Supabase:', err.message);
+            console.error('Error logging in with Supabase Auth:', err.message);
             return { success: false, message: "Error al iniciar sesión" };
         }
     } else {
         // Fallback to localStorage
-        initUsers();
-        const users = getUsers();
-        
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-        if (!user) {
-            return { success: false, message: "Email no registrado" };
-        }
-        
-        const passwordHash = await hashPassword(password);
-        if (user.passwordHash !== passwordHash) {
-            return { success: false, message: "Contraseña incorrecta" };
-        }
-        
-        // Update last login
-        user.lastLogin = new Date().toISOString();
-        saveUsers(users);
-        
-        // Set session
-        const session = {
-            userId: user.id,
-            rememberMe: rememberMe
-        };
-        
-        sessionStorage.setItem('camponuevo_session', JSON.stringify(session));
+        return await loginUserLocal(email, password, rememberMe);
+    }
+}
+
+// Local login fallback
+async function loginUserLocal(email, password, rememberMe) {
+    initUsers();
+    const users = getUsers();
+    
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!user) {
+        return { success: false, message: "Email no registrado" };
+    }
+    
+    const passwordHash = await hashPassword(password);
+    if (user.passwordHash !== passwordHash) {
+        return { success: false, message: "Contraseña incorrecta" };
+    }
+    
+    // Update last login
+    user.lastLogin = new Date().toISOString();
+    saveUsers(users);
+    
+    // Set session
+    const session = {
+        userId: user.id,
+        rememberMe: rememberMe
+    };
+    
+    sessionStorage.setItem('camponuevo_session', JSON.stringify(session));
         
         if (rememberMe) {
             localStorage.setItem('camponuevo_session', JSON.stringify(session));
@@ -10319,46 +10341,67 @@ async function loginUser(email, password, rememberMe = false) {
 function logoutUser() {
     sessionStorage.removeItem('camponuevo_session');
     localStorage.removeItem('camponuevo_session');
+    
+    // Also sign out from Supabase Auth if available
+    if (isSupabaseAvailable() && window.supabase.auth) {
+        window.supabase.auth.signOut();
+    }
 }
 
 // Get current logged in user
 async function getCurrentUser() {
-    // Check sessionStorage first
-    let session = sessionStorage.getItem('camponuevo_session');
-    if (!session) {
-        // Check localStorage for "remember me"
-        session = localStorage.getItem('camponuevo_session');
-    }
-    
-    if (!session) return null;
-    
-    try {
-        const sessionData = JSON.parse(session);
-        
-        // Check if Supabase is available
-        if (isSupabaseAvailable()) {
-            try {
-                const { data: users, error } = await window.supabase
-                    .from('users')
-                    .select('*')
-                    .eq('id', sessionData.userId);
+    // Check if Supabase Auth has a session
+    if (isSupabaseAvailable() && window.supabase.auth) {
+        try {
+            const { data: { session }, error } = await window.supabase.auth.getSession();
+            
+            if (error) throw error;
+            
+            if (!session) {
+                // Check sessionStorage as fallback
+                const storedSession = sessionStorage.getItem('camponuevo_session') || localStorage.getItem('camponuevo_session');
+                if (!storedSession) return null;
                 
-                if (error) throw error;
-                
-                if (!users || users.length === 0) {
-                    // User not found in Supabase, clear session
-                    sessionStorage.removeItem('camponuevo_session');
-                    localStorage.removeItem('camponuevo_session');
-                    return null;
-                }
-                
-                return users[0];
-            } catch (err) {
-                console.error('Error fetching user from Supabase:', err.message);
-                return null;
+                const sessionData = JSON.parse(storedSession);
+                return await getUserFromTable(sessionData.userId);
             }
-        } else {
-            // Fallback to localStorage
+            
+            // Get user data from auth
+            const { data: { user }, error: userError } = await window.supabase.auth.getUser();
+            
+            if (userError) throw userError;
+            
+            if (user) {
+                // Try to get additional data from users table
+                const additionalData = await getUserFromTable(user.id);
+                
+                // Merge data
+                return {
+                    id: user.id,
+                    email: user.email,
+                    name: additionalData?.name || user.user_metadata?.name || '',
+                    ...additionalData
+                };
+            }
+            
+            return null;
+        } catch (err) {
+            console.error('Error getting current user from Supabase Auth:', err.message);
+            
+            // Fallback to stored session
+            const storedSession = sessionStorage.getItem('camponuevo_session') || localStorage.getItem('camponuevo_session');
+            if (!storedSession) return null;
+            
+            const sessionData = JSON.parse(storedSession);
+            return await getUserFromTable(sessionData.userId);
+        }
+    } else {
+        // Fallback to localStorage
+        const storedSession = sessionStorage.getItem('camponuevo_session') || localStorage.getItem('camponuevo_session');
+        if (!storedSession) return null;
+        
+        try {
+            const sessionData = JSON.parse(storedSession);
             const users = getUsers();
             const user = users.find(u => u.id === sessionData.userId);
             if (!user) {
@@ -10366,6 +10409,30 @@ async function getCurrentUser() {
                 localStorage.removeItem('camponuevo_session');
             }
             return user || null;
+        } catch (e) {
+            return null;
+        }
+    }
+}
+
+// Helper function to get user from users table
+async function getUserFromTable(userId) {
+    if (!isSupabaseAvailable()) return null;
+    
+    try {
+        const { data: users, error } = await window.supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId);
+        
+        if (error) throw error;
+        
+        return users && users.length > 0 ? users[0] : null;
+    } catch (err) {
+        console.warn('Error fetching user from table:', err.message);
+        return null;
+    }
+}
         }
     } catch (e) {
         return null;
@@ -10639,3 +10706,54 @@ window.clearCart = clearCart;
 window.getSecurityQuestions = getSecurityQuestions;
 window.generateId = generateId;
 window.hashPassword = hashPassword;
+
+// Listen for Supabase Auth state changes (email verification, etc.)
+if (typeof window !== 'undefined') {
+    window.addEventListener('DOMContentLoaded', function() {
+        // Wait for Supabase to be ready
+        function setupAuthListener() {
+            if (!window.supabase || !window.supabase.auth) {
+                setTimeout(setupAuthListener, 100);
+                return;
+            }
+            
+            // Listen for auth state changes
+            window.supabase.auth.onAuthStateChange(async (event, session) => {
+                console.log('Auth state changed:', event);
+                
+                if (event === 'SIGNED_IN' && session) {
+                    console.log('User signed in:', session.user);
+                    
+                    // Update session storage
+                    sessionStorage.setItem('camponuevo_session', JSON.stringify({
+                        userId: session.user.id,
+                        rememberMe: true
+                    }));
+                    
+                    // Dispatch event for UI update
+                    document.dispatchEvent(new CustomEvent('userLoggedIn', { detail: session.user }));
+                }
+                
+                if (event === 'SIGNED_OUT') {
+                    console.log('User signed out');
+                    sessionStorage.removeItem('camponuevo_session');
+                    localStorage.removeItem('camponuevo_session');
+                    
+                    // Dispatch event for UI update
+                    document.dispatchEvent(new CustomEvent('userLoggedOut'));
+                }
+                
+                if (event === 'EMAIL_VERIFICATION' || (event === 'USER_UPDATED' && session?.user?.email_confirmed_at)) {
+                    console.log('Email verified!');
+                    alert('¡Tu correo electrónico ha sido verificado! Ya puedes iniciar sesión.');
+                    
+                    // Dispatch event for UI update
+                    document.dispatchEvent(new CustomEvent('emailVerified'));
+                }
+            });
+        }
+        
+        // Start listening after a short delay to ensure Supabase is loaded
+        setTimeout(setupAuthListener, 500);
+    });
+}

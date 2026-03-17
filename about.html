@@ -42,10 +42,21 @@
 </head>
 <body class="flex flex-col min-h-screen">
     <div id="site-header-placeholder"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="components/header_content.js"></script>
     <script src="js/data.js"></script>
-    <script src="js/header.js"></script>
+    <script>
+        // Load header.js after data.js is ready
+        window.addEventListener('load', function() {
+            var script = document.createElement('script');
+            script.src = 'js/header.js';
+            script.onload = function() {
+                console.log('Header.js loaded');
+            };
+            document.body.appendChild(script);
+        });
+    </script>
 
     <!-- Hero About -->
     <section class="relative pt-12 pb-24 overflow-hidden bg-primary">

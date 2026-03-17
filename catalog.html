@@ -63,7 +63,17 @@
     <script src="js/supabase-config.js"></script>
     <script src="js/data.js"></script>
     <script src="components/header_content.js"></script>
-    <script src="js/header.js"></script>
+    <script>
+        // Load header.js after data.js is ready
+        window.addEventListener('load', function() {
+            var script = document.createElement('script');
+            script.src = 'js/header.js';
+            script.onload = function() {
+                console.log('Header.js loaded');
+            };
+            document.body.appendChild(script);
+        });
+    </script>
 
 
     <!-- Page Header -->
