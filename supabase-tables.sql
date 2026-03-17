@@ -73,8 +73,22 @@ CREATE TABLE IF NOT EXISTS users (
     name TEXT,
     phone TEXT,
     address TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    password_hash TEXT,
+    security_question TEXT,
+    security_answer_hash TEXT,
+    location TEXT,
+    identification TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    last_login TIMESTAMP WITH TIME ZONE
 );
+
+-- Agregar columnas si la tabla ya existe (para migraciones)
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS security_question TEXT;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS security_answer_hash TEXT;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS location TEXT;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS identification TEXT;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE;
 
 -- =============================================================================
 -- HABILITAR ROW LEVEL SECURITY (RLS)

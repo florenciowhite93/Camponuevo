@@ -12,6 +12,10 @@
                 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0bGN6b2tjZHhnemdxcm9ydHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0OTcwMDAsImV4cCI6MjA2MTA3MzAwMH0.K4AXxMHVd0VqeFR9gUGMSyq-zVYHj4pH1vsH5KGTFqc'
             );
             console.log('Supabase client initialized from data.js');
+            window.supabaseReady = true;
+        };
+        script.onerror = function() {
+            console.error('Failed to load Supabase client');
         };
         document.head.appendChild(script);
     }
@@ -10102,47 +10106,67 @@ async function registerUser(userData) {
             // Hash password
             const passwordHash = await hashPassword(userData.password);
             
-            // Create user object
-            const user = {
-                id: generateId(),
-                email: userData.email,
-                passwordHash: passwordHash,
+            // Create user object with all fields
+            const userId = generateId();
+            const now = new Date().toISOString();
+            
+            // Build user object for Supabase
+            const userDataForSupabase = {
+                id: userId,
+                email: userData.email.toLowerCase(),
                 name: userData.name,
                 phone: "",
-                securityQuestion: "",
-                securityAnswerHash: "",
-                location: "",
-                identification: "",
-                createdAt: new Date().toISOString(),
-                lastLogin: new Date().toISOString()
+                created_at: now,
+                last_login: now
             };
+            
+            // Add optional fields if they exist in the table
+            userDataForSupabase.password_hash = passwordHash;
             
             // Save to Supabase
             const { error } = await window.supabase
                 .from('users')
-                .insert({
-                    id: user.id,
-                    email: user.email,
-                    password_hash: user.passwordHash,
-                    name: user.name,
-                    phone: user.phone,
-                    security_question: user.securityQuestion,
-                    security_answer_hash: user.securityAnswerHash,
-                    location: user.location,
-                    identification: user.identification,
-                    created_at: user.createdAt,
-                    last_login: user.lastLogin
-                });
+                .insert(userDataForSupabase);
             
-            if (error) throw error;
+            if (error) {
+                // If the error is about missing columns, try without optional fields
+                console.warn('Error inserting user, trying with minimal fields:', error.message);
+                
+                const minimalUserData = {
+                    id: userId,
+                    email: userData.email.toLowerCase(),
+                    name: userData.name,
+                    created_at: now
+                };
+                
+                const { error: minimalError } = await window.supabase
+                    .from('users')
+                    .insert(minimalUserData);
+                
+                if (minimalError) throw minimalError;
+                
+                // Also save to localStorage as fallback
+                initUsers();
+                const users = getUsers();
+                users.push({
+                    id: userId,
+                    email: userData.email,
+                    passwordHash: passwordHash,
+                    name: userData.name,
+                    phone: "",
+                    createdAt: now,
+                    lastLogin: now
+                });
+                saveUsers(users);
+            }
             
             // Auto login after registration
             sessionStorage.setItem('camponuevo_session', JSON.stringify({
-                userId: user.id,
+                userId: userId,
                 rememberMe: false
             }));
             
-            return { success: true, user: user };
+            return { success: true, user: { id: userId, email: userData.email, name: userData.name } };
         } catch (err) {
             console.error('Error registering user in Supabase:', err.message);
             return { success: false, message: "Error al registrar usuario" };
@@ -10207,19 +10231,37 @@ async function loginUser(email, password, rememberMe = false) {
             }
             
             const user = users[0];
-            const passwordHash = await hashPassword(password);
             
-            if (user.password_hash !== passwordHash) {
-                return { success: false, message: "Contraseña incorrecta" };
+            // Check if password_hash column exists and has a value
+            if (user.password_hash) {
+                const passwordHash = await hashPassword(password);
+                
+                if (user.password_hash !== passwordHash) {
+                    return { success: false, message: "Contraseña incorrecta" };
+                }
+            } else {
+                // Fallback: check if password is stored in localStorage (legacy)
+                const localUsers = getUsers();
+                const localUser = localUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+                if (!localUser) {
+                    return { success: false, message: "Usuario no encontrado" };
+                }
+                
+                const passwordHash = await hashPassword(password);
+                if (localUser.passwordHash !== passwordHash) {
+                    return { success: false, message: "Contraseña incorrecta" };
+                }
             }
             
-            // Update last login in Supabase
-            const { error: updateError } = await window.supabase
-                .from('users')
-                .update({ last_login: new Date().toISOString() })
-                .eq('id', user.id);
-            
-            if (updateError) throw updateError;
+            // Update last login in Supabase (if column exists)
+            try {
+                await window.supabase
+                    .from('users')
+                    .update({ last_login: new Date().toISOString() })
+                    .eq('id', user.id);
+            } catch (e) {
+                console.warn('Could not update last_login:', e.message);
+            }
             
             // Set session
             const session = {
@@ -10303,7 +10345,14 @@ async function getCurrentUser() {
                 
                 if (error) throw error;
                 
-                return users && users.length > 0 ? users[0] : null;
+                if (!users || users.length === 0) {
+                    // User not found in Supabase, clear session
+                    sessionStorage.removeItem('camponuevo_session');
+                    localStorage.removeItem('camponuevo_session');
+                    return null;
+                }
+                
+                return users[0];
             } catch (err) {
                 console.error('Error fetching user from Supabase:', err.message);
                 return null;
@@ -10311,7 +10360,12 @@ async function getCurrentUser() {
         } else {
             // Fallback to localStorage
             const users = getUsers();
-            return users.find(u => u.id === sessionData.userId) || null;
+            const user = users.find(u => u.id === sessionData.userId);
+            if (!user) {
+                sessionStorage.removeItem('camponuevo_session');
+                localStorage.removeItem('camponuevo_session');
+            }
+            return user || null;
         }
     } catch (e) {
         return null;

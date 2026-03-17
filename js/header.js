@@ -375,61 +375,94 @@
 
         // Update UI based on user session
         async function updateAuthUI() {
-            const user = await getCurrentUser();
+            console.log('Updating auth UI...');
             
-            if (user && userAuthContainer) {
-                // User is logged in - show dropdown button
-                userAuthContainer.innerHTML = `
-                    <div class="relative">
-                        <button id="btnUserMenu" class="flex items-center gap-2 text-gray-600 hover:text-primary transition p-2 rounded-full hover:bg-gray-100">
-                            <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                ${user.name.charAt(0).toUpperCase()}
-                            </div>
-                            <span class="hidden md:inline text-sm font-medium">${user.name.split(' ')[0]}</span>
-                            <i class="fas fa-chevron-down text-xs"></i>
-                        </button>
-                    </div>
-                `;
+            const userAuthContainer = document.getElementById('userAuthContainer');
+            if (!userAuthContainer) {
+                console.log('userAuthContainer not found');
+                return;
+            }
+            
+            // Add event listener to the static login button if it exists
+            const staticLoginBtn = document.getElementById('btnShowLogin');
+            if (staticLoginBtn && !staticLoginBtn.hasAttribute('data-listener-added')) {
+                staticLoginBtn.addEventListener('click', () => openAuthModal('login'));
+                staticLoginBtn.setAttribute('data-listener-added', 'true');
+            }
+            
+            try {
+                const user = await getCurrentUser();
+                console.log('Current user:', user);
                 
-                // Show dropdown on click
-                const btnUserMenu = document.getElementById('btnUserMenu');
-                if (btnUserMenu) {
-                    btnUserMenu.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const isHidden = userDropdownContainer.classList.contains('hidden');
-                        if (isHidden) {
-                            userDropdownContainer.classList.remove('hidden');
-                            userDropdownContainer.classList.add('scale-100', 'opacity-100');
-                        } else {
-                            userDropdownContainer.classList.add('hidden');
-                            userDropdownContainer.classList.remove('scale-100', 'opacity-100');
-                        }
-                    });
+                const loginBtn = document.getElementById('btnShowLogin');
+                
+                if (user && user.name) {
+                    // User is logged in - hide login button and show user menu
+                    if (loginBtn) {
+                        loginBtn.style.display = 'none';
+                    }
+                    
+                    // Show user menu container
+                    userAuthContainer.innerHTML = `
+                        <div class="relative">
+                            <button id="btnUserMenu" class="flex items-center gap-2 text-gray-600 hover:text-primary transition p-2 rounded-full hover:bg-gray-100">
+                                <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                    ${user.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span class="hidden md:inline text-sm font-medium">${user.name.split(' ')[0]}</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Show dropdown on click
+                    const btnUserMenu = document.getElementById('btnUserMenu');
+                    const userDropdownContainer = document.getElementById('userDropdown');
+                    if (btnUserMenu && userDropdownContainer) {
+                        btnUserMenu.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const isHidden = userDropdownContainer.classList.contains('hidden');
+                            if (isHidden) {
+                                userDropdownContainer.classList.remove('hidden');
+                                userDropdownContainer.classList.add('scale-100', 'opacity-100');
+                            } else {
+                                userDropdownContainer.classList.add('hidden');
+                                userDropdownContainer.classList.remove('scale-100', 'opacity-100');
+                            }
+                        });
+                    }
+                    
+                    // Update dropdown info
+                    const userDropdown = document.getElementById('dropdownUserName');
+                    const dropdownUserEmail = document.getElementById('dropdownUserEmail');
+                    if (userDropdown) userDropdown.textContent = user.name;
+                    if (dropdownUserEmail) dropdownUserEmail.textContent = user.email;
+                    
+                } else {
+                    // User is not logged in - ensure login button is visible
+                    if (loginBtn) {
+                        loginBtn.style.display = 'flex';
+                    }
                 }
-                
-                // Update dropdown info
-                if (userDropdown) userDropdown.textContent = user.name;
-                if (dropdownUserEmail) dropdownUserEmail.textContent = user.email;
-                
-            } else if (userAuthContainer) {
-                // User is not logged in - show only login button with improved style
-                userAuthContainer.innerHTML = `
-                    <button id="btnShowLogin" class="bg-gradient-to-r from-primary to-dark hover:from-dark hover:to-black text-white px-5 py-2.5 rounded-full text-sm font-bold transition shadow-md flex items-center gap-2">
-                        <i class="fas fa-sign-in-alt"></i>
-                        <span>Iniciar Sesión</span>
-                    </button>
-                `;
-                
-                // Add event listeners
-                document.getElementById('btnShowLogin').addEventListener('click', () => openAuthModal('login'));
+            } catch (err) {
+                console.error('Error updating auth UI:', err);
+                // Show login button on error
+                const loginBtn = document.getElementById('btnShowLogin');
+                if (loginBtn) {
+                    loginBtn.style.display = 'flex';
+                }
             }
             
             // Close dropdown when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('#btnUserMenu') && !e.target.closest('#userDropdown')) {
-                    userDropdownContainer.classList.add('hidden');
-                }
-            });
+            const userDropdownContainer = document.getElementById('userDropdown');
+            if (userDropdownContainer) {
+                document.addEventListener('click', (e) => {
+                    const btnUserMenu = document.getElementById('btnUserMenu');
+                    if (btnUserMenu && !e.target.closest('#btnUserMenu') && !e.target.closest('#userDropdown')) {
+                        userDropdownContainer.classList.add('hidden');
+                    }
+                });
+            }
         }
 
         function openAuthModal(form = 'login') {

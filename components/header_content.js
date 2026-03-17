@@ -58,10 +58,14 @@ window.SHARED_HEADER_HTML = `
                     </div>
                 </div>
 
-                <!-- User Menu / Auth Buttons Container (with relative positioning) -->
+                // User Menu / Auth Buttons Container (with relative positioning)
                 <div id="userMenuContainer" class="relative flex items-center gap-2">
                     <div id="userAuthContainer" class="flex items-center gap-2">
-                        <!-- Will be populated by JS -->
+                        <!-- Login button - always visible when not logged in -->
+                        <button id="btnShowLogin" class="bg-gradient-to-r from-primary to-dark hover:from-dark hover:to-black text-white px-5 py-2.5 rounded-full text-sm font-bold transition shadow-md flex items-center gap-2">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Iniciar Sesión</span>
+                        </button>
                     </div>
                     
                     <!-- User Dropdown Menu (Hidden by default) -->
