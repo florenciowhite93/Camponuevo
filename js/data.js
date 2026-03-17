@@ -9092,7 +9092,7 @@ function getProductById(id) {
 
 // Save a product (Create or Update)
 function saveProduct(product) {
-    const products = getProducts();
+    const products = productsCache || [];
     const index = products.findIndex(p => p.id === product.id);
     
     if (index !== -1) {
@@ -9103,6 +9103,7 @@ function saveProduct(product) {
         products.push(product);
     }
     
+    productsCache = products;
     localStorage.setItem('camponuevo_products', JSON.stringify(products));
     
     // Also save to Supabase in background
@@ -9119,6 +9120,17 @@ async function saveProductToSupabase(product) {
         console.log('Supabase not available, product saved locally only');
         return;
     }
+    
+    // Helper to convert string or array to proper array
+    const toArray = (val) => {
+        if (Array.isArray(val)) return val;
+        if (!val) return [];
+        if (typeof val === 'string') {
+            return val.split(';').map(s => s.trim()).filter(s => s.length > 0);
+        }
+        return [];
+    };
+    
     try {
         const productData = {
             id: product.id,
@@ -9128,11 +9140,11 @@ async function saveProductToSupabase(product) {
             action: product.action || product.description || '',
             indications: product.indications || '',
             subcategory: product.subCategory || product.subcategory || '',
-            subcategories: product.subCategories || product.subcategories || [],
-            animalbreeds: product.animalBreeds || product.animalbreeds || [],
+            subcategories: toArray(product.subCategories || product.subcategories),
+            animalbreeds: toArray(product.animalBreeds || product.animalbreeds),
             volume: product.volumeWeight || product.volume || '',
             image: product.image || '',
-            drugs: product.drugs || [],
+            drugs: toArray(product.drugs),
             dose: product.dose || '',
             externallink: product.externalLink || product.externallink || ''
         };
