@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS products (
     title TEXT,
     price NUMERIC,
     laboratory TEXT,
-    description TEXT,
+    action TEXT,
+    indications TEXT,
     subcategory TEXT,
     subcategories TEXT[],
     animalbreeds TEXT[],
@@ -129,6 +130,13 @@ CREATE POLICY "Allow delete labels" ON labels FOR DELETE USING (true);
 CREATE POLICY "Allow delete home_categories" ON home_categories FOR DELETE USING (true);
 CREATE POLICY "Allow delete orders" ON orders FOR DELETE USING (true);
 CREATE POLICY "Allow delete users" ON users FOR DELETE USING (true);
+
+-- =============================================================================
+-- ACTUALIZACIÓN: Agregar columnas action e indications (si no existen)
+-- Ejecutar solo si las columnas ya existen en la tabla
+-- =============================================================================
+-- ALTER TABLE products ADD COLUMN IF NOT EXISTS action TEXT;
+-- ALTER TABLE products ADD COLUMN IF NOT EXISTS indications TEXT;
 
 -- =============================================================================
 -- VERIFICACIÓN
