@@ -614,14 +614,11 @@
                     
                     // Check if email confirmation is required
                     if (result.requiresEmailConfirmation) {
-                        // Show success message with email verification notice
                         alert(result.message);
                     } else {
                         await updateAuthUI();
                         alert('¡Cuenta creada exitosamente! Completa tu perfil para acceder a todas las funcionalidades.');
                     }
-                } else {
-                    alert('¡Cuenta creada exitosamente! Completa tu perfil para acceder a todas las funcionalidades.');
                 } else {
                     document.getElementById('registerError').classList.remove('hidden');
                     document.getElementById('registerErrorMessage').textContent = result.message;
