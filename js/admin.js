@@ -1877,15 +1877,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initAdminPanel() {
-        selectedProductIds.clear();
-        updateBulkToolbarVisibility();
-        switchTab('products');
-        renderProducts();
-        initFilters(getProducts());
-        renderSubCategories();
-        renderLaboratories();
-        renderLabels();
-        initColorPalette();
+        // Load products from Supabase first
+        getProductsAsync().then(() => {
+            selectedProductIds.clear();
+            updateBulkToolbarVisibility();
+            switchTab('products');
+            renderProducts();
+            initFilters(getProducts());
+            renderSubCategories();
+            renderLaboratories();
+            renderLabels();
+            initColorPalette();
+        });
     }
 
     // --- Client Management ---
