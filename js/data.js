@@ -9003,11 +9003,11 @@ function initDB() {
     }
 }
 
-// Get all products - prioritize Supabase over localStorage
+// Get all products - ONLY from Supabase
 async function getProductsAsync(forceReload = false) {
     if (productsCache && !forceReload) return productsCache;
     
-    // Try to load from Supabase first if available
+    // Only load from Supabase - no fallback to localStorage
     if (isSupabaseAvailable()) {
         try {
             const supabaseProducts = await getProductsFromSupabase();
@@ -9021,29 +9021,29 @@ async function getProductsAsync(forceReload = false) {
                     indications: p.indications || ''
                 }));
                 
+                // Sync to localStorage for offline access
                 localStorage.setItem('camponuevo_products', JSON.stringify(mappedProducts));
                 productsCache = mappedProducts;
                 console.log('Products loaded from Supabase:', mappedProducts.length);
                 return mappedProducts;
+            } else {
+                // Supabase is empty - clear cache and return empty
+                productsCache = [];
+                localStorage.removeItem('camponuevo_products');
+                console.log('Supabase products empty, returning empty array');
+                return [];
             }
         } catch (err) {
-            console.log('Supabase load failed, falling back to localStorage:', err.message);
+            console.error('Error loading from Supabase:', err.message);
+            productsCache = [];
+            return [];
         }
     }
     
-    // Fallback to localStorage
-    initDB();
-    const data = localStorage.getItem('camponuevo_products');
-    if (!data) return [];
-    try {
-        const products = JSON.parse(data);
-        console.log('Products loaded from localStorage:', products.length);
-        productsCache = products;
-        return products;
-    } catch (e) {
-        console.error('Error parsing products:', e);
-        return [];
-    }
+    // Supabase not available - return empty
+    console.log('Supabase not available, returning empty products');
+    productsCache = [];
+    return [];
 }
 
 // Sync wrapper for backward compatibility
