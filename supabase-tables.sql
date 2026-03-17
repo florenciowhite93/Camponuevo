@@ -61,6 +61,9 @@ CREATE TABLE IF NOT EXISTS orders (
     id TEXT PRIMARY KEY,
     userid TEXT,
     products TEXT,
+    customer_info TEXT,
+    subtotal NUMERIC,
+    iva NUMERIC,
     total NUMERIC,
     status TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

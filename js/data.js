@@ -187,12 +187,24 @@ async function saveOrderToSupabase(order) {
     if (!isSupabaseAvailable()) return false;
     try {
         const { error } = await window.supabase.from('orders').insert({
-            id: order.id, userid: order.userId, products: JSON.stringify(order.products),
-            total: order.total, status: order.status, created_at: order.createdAt || new Date().toISOString()
+            id: order.id, 
+            userid: order.userId, 
+            products: JSON.stringify(order.items),
+            customer_info: JSON.stringify(order.customerInfo),
+            subtotal: order.subtotal,
+            iva: order.iva,
+            total: order.total, 
+            status: order.status, 
+            created_at: order.createdAt || new Date().toISOString()
         });
-        if (error) throw error;
+        if (error) {
+            console.error('Error saving order to Supabase:', error);
+            throw error;
+        }
+        console.log('Order saved to Supabase:', order.id);
         return true;
     } catch (err) {
+        console.error('Error saving order to Supabase:', err);
         return false;
     }
 }
@@ -10756,14 +10768,21 @@ async function loadOrdersFromSupabaseInBackground() {
         const supabaseOrders = await getOrdersFromSupabase();
         if (supabaseOrders && supabaseOrders.length > 0) {
             ordersCache = supabaseOrders.map(o => ({
-                id: o.id, userId: o.userid, items: JSON.parse(o.products || '[]'),
-                total: o.total, status: o.status, createdAt: o.created_at
+                id: o.id, 
+                userId: o.userid, 
+                items: o.products ? JSON.parse(o.products) : [],
+                customerInfo: o.customer_info ? JSON.parse(o.customer_info) : null,
+                subtotal: o.subtotal,
+                iva: o.iva,
+                total: o.total, 
+                status: o.status, 
+                createdAt: o.created_at
             }));
             ordersSupabaseLoaded = true;
-            console.log('Orders loaded from Supabase in background');
+            console.log('Orders loaded from Supabase in background:', ordersCache.length, 'orders');
         }
     } catch (err) {
-        console.log('Supabase orders not available yet');
+        console.log('Supabase orders not available yet:', err.message);
     }
 }
 
