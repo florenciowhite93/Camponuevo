@@ -357,8 +357,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (importedProducts.length > 0) {
                 if (confirm(`Se han detectado ${importedProducts.length} productos en el CSV. ¿Deseas reemplazar el catálogo actual?`)) {
-                    // Save products
+                    // Save products to localStorage
+                    productsCache = importedProducts;
                     localStorage.setItem('camponuevo_products', JSON.stringify(importedProducts));
+                    
+                    // Save products to Supabase
+                    if (isSupabaseAvailable()) {
+                        try {
+                            // Delete existing products in Supabase
+                            await window.supabase.from('products').delete().neq('id', '');
+                            
+                            // Map products to Supabase format
+                            const supabaseProducts = importedProducts.map(p => ({
+                                id: p.id,
+                                title: p.title || '',
+                                price: p.price || 0,
+                                laboratory: p.laboratory || '',
+                                action: p.action || p.description || '',
+                                indications: p.indications || '',
+                                subcategory: p.subCategory || p.subcategory || '',
+                                subcategories: p.subCategories || p.subcategories || [],
+                                animalbreeds: p.animalBreeds || p.animalbreeds || [],
+                                volume: p.volumeWeight || p.volume || '',
+                                image: p.image || '',
+                                drugs: p.drugs || [],
+                                dose: p.dose || '',
+                                externallink: p.externalLink || p.externallink || ''
+                            }));
+                            
+                            await window.supabase.from('products').insert(supabaseProducts);
+                            console.log('Products saved to Supabase:', supabaseProducts.length);
+                        } catch (err) {
+                            console.error('Error saving to Supabase:', err);
+                        }
+                    }
                     
                     // Extract and save unique laboratories from imported products
                     const labsSet = new Set();
