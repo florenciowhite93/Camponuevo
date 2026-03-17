@@ -530,11 +530,25 @@
         if (loginForm) {
             loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                
+                // Get submit button and show loading state
+                const submitBtn = loginForm.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Iniciando sesión...';
+                
+                // Hide any previous errors
+                document.getElementById('loginError').classList.add('hidden');
+                
                 const email = document.getElementById('loginEmail').value;
                 const password = document.getElementById('loginPassword').value;
                 const rememberMe = document.getElementById('rememberMe').checked;
                 
                 const result = await loginUser(email, password, rememberMe);
+                
+                // Reset button state
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
                 
                 if (result.success) {
                     closeAuthModal();
@@ -586,6 +600,15 @@
                 e.preventDefault();
                 console.log('Register form submitted - calling registerUser');
                 
+                // Get submit button and show loading state
+                const submitBtn = registerForm.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creando cuenta...';
+                
+                // Hide any previous errors
+                document.getElementById('registerError').classList.add('hidden');
+                
                 const name = document.getElementById('regName').value;
                 const email = document.getElementById('regEmail').value;
                 const password = document.getElementById('regPassword').value;
@@ -593,12 +616,16 @@
                 
                 // Validations
                 if (password.length < 6) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
                     document.getElementById('registerError').classList.remove('hidden');
                     document.getElementById('registerErrorMessage').textContent = 'La contraseña debe tener al menos 6 caracteres.';
                     return;
                 }
                 
                 if (password !== confirmPassword) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
                     document.getElementById('registerError').classList.remove('hidden');
                     document.getElementById('registerErrorMessage').textContent = 'Las contraseñas no coinciden.';
                     return;
@@ -609,6 +636,10 @@
                     email,
                     password
                 });
+                
+                // Reset button state
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
                 
                 if (result.success) {
                     closeAuthModal();
