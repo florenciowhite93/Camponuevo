@@ -621,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tab === 'orders') renderOrders();
         if (tab === 'cats') renderCategories();
         if (tab === 'subCats') renderSubCategories();
-        if (tab === 'homeCats') renderHomeCategories();
+        if (tab === 'homeCats') await renderHomeCategories();
         if (tab === 'labs') renderLaboratories();
         if (tab === 'labels') renderLabels();
     }
@@ -909,7 +909,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!homeCatsContainer || !allCatsContainer || !homeCatSelector) return;
         
         const allCats = await getCategories();
-        const homeCatData = getHomeCategories();
+        const homeCatData = await getHomeCategories();
+        
+        console.log('renderHomeCategories - allCats:', allCats);
+        console.log('renderHomeCategories - homeCatData:', homeCatData);
         
         const categoryIcons = {
             'veterinaria': 'fa-vial',
