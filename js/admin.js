@@ -364,8 +364,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Save products to Supabase
                     if (isSupabaseAvailable()) {
                         try {
+                            console.log('Starting Supabase import...');
+                            
                             // Delete existing products in Supabase
                             await window.supabase.from('products').delete().neq('id', '');
+                            console.log('Deleted existing products from Supabase');
                             
                             // Map products to Supabase format
                             const supabaseProducts = importedProducts.map(p => ({
@@ -385,11 +388,22 @@ document.addEventListener('DOMContentLoaded', () => {
                                 externallink: p.externalLink || p.externallink || ''
                             }));
                             
-                            await window.supabase.from('products').insert(supabaseProducts);
-                            console.log('Products saved to Supabase:', supabaseProducts.length);
+                            console.log('Inserting to Supabase:', supabaseProducts.length, 'products');
+                            
+                            const { data, error } = await window.supabase.from('products').insert(supabaseProducts);
+                            
+                            if (error) {
+                                console.error('Supabase insert error:', error);
+                                alert('Error al guardar en Supabase: ' + error.message);
+                            } else {
+                                console.log('Products saved to Supabase successfully:', supabaseProducts.length);
+                            }
                         } catch (err) {
                             console.error('Error saving to Supabase:', err);
+                            alert('Error al guardar en Supabase: ' + err.message);
                         }
+                    } else {
+                        console.log('Supabase not available, skipping...');
                     }
                     
                     // Extract and save unique laboratories from imported products
