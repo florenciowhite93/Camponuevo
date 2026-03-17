@@ -10105,6 +10105,10 @@ async function registerUser(userData) {
                 if (error.message.includes('already registered') || error.message.includes('already been registered')) {
                     return { success: false, message: "El email ya está registrado" };
                 }
+                // Check for rate limit error
+                if (error.message.includes('rate limit') || error.message.includes('too many requests')) {
+                    return { success: false, message: "Demasiadas solicitudes. Por favor espera unos minutos e intenta nuevamente." };
+                }
                 throw error;
             }
             
