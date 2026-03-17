@@ -2573,6 +2573,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Create product object
         const finalProductId = document.getElementById('productId').value || generateId();
+        
+        function toSentenceCase(text) {
+            if (!text) return '';
+            return text.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g, c => c.toUpperCase());
+        }
+        
         const product = {
             id: finalProductId,
             title: document.getElementById('title').value,
@@ -2580,9 +2586,9 @@ document.addEventListener('DOMContentLoaded', () => {
             price: parseFloat(document.getElementById('price').value),
             volumeWeight: document.getElementById('volumeWeight').value,
             drugs: document.getElementById('drugs').value,
-            action: document.getElementById('action').value,
-            indications: document.getElementById('indications').value,
-            dose: document.getElementById('dose').value,
+            action: toSentenceCase(document.getElementById('action').value),
+            indications: toSentenceCase(document.getElementById('indications').value),
+            dose: toSentenceCase(document.getElementById('dose').value),
             image: finalImage,
             externalLink: document.getElementById('externalLink').value,
             animalBreeds: breeds,
