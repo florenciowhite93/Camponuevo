@@ -687,10 +687,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (btnAddCat) {
-        btnAddCat.addEventListener('click', () => {
+        btnAddCat.addEventListener('click', async () => {
             const name = newCatInput.value.trim();
             if (name) {
-                const result = addCategory(name);
+                const result = await addCategory(name);
                 if (result.success) {
                     newCatInput.value = '';
                     renderCategories();
