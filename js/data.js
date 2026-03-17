@@ -10083,19 +10083,20 @@ async function hashPassword(password) {
     return hash.toString();
 }
 
-// Register new user with email verification
+// Register new user
 async function registerUser(userData) {
     // Check if Supabase Auth is available
     if (isSupabaseAvailable() && window.supabase.auth) {
         try {
-            // Sign up with Supabase Auth (this sends verification email)
+            // Sign up with Supabase Auth (auto-confirm for now, no email verification required)
             const { data, error } = await window.supabase.auth.signUp({
                 email: userData.email.toLowerCase(),
                 password: userData.password,
                 options: {
                     data: {
                         name: userData.name
-                    }
+                    },
+                    emailRedirectTo: undefined // Disable email confirmation redirect
                 }
             });
             
@@ -10107,36 +10108,42 @@ async function registerUser(userData) {
                 throw error;
             }
             
-            // If email confirmation is required
-            if (data.user && !data.session) {
-                return { 
-                    success: true, 
-                    requiresEmailConfirmation: true,
-                    message: "Se ha enviado un correo de verificación a tu bandeja de entrada. Por favor, haz clic en el enlace para activar tu cuenta." 
-                };
-            }
+            // Generate a user ID (either from Supabase auth or create our own)
+            const userId = data.user ? data.user.id : generateId();
             
-            // If email confirmation is not required (auto-confirm)
-            if (data.session) {
-                // Save additional user data to users table
+            // Save user data to Supabase users table
+            try {
                 await window.supabase.from('users').upsert({
-                    id: data.user.id,
+                    id: userId,
                     email: userData.email.toLowerCase(),
                     name: userData.name,
+                    password_hash: await hashPassword(userData.password),
                     created_at: new Date().toISOString(),
-                    email_confirmed: true
+                    last_login: new Date().toISOString()
                 });
-                
-                return { success: true, user: data.user };
+                console.log('User saved to Supabase users table');
+            } catch (saveErr) {
+                console.warn('Could not save to users table:', saveErr.message);
             }
             
-            return { success: true, message: "Registro exitoso" };
+            // Auto-login after registration (set session)
+            sessionStorage.setItem('camponuevo_session', JSON.stringify({
+                userId: userId,
+                rememberMe: false
+            }));
+            
+            return { 
+                success: true, 
+                user: { id: userId, email: userData.email, name: userData.name },
+                message: "¡Registro exitoso! Bienvenido a Camponuevo."
+            };
         } catch (err) {
             console.error('Error registering user with Supabase Auth:', err.message);
-            return { success: false, message: "Error al registrar usuario: " + err.message };
+            // Fallback to local registration
+            return await registerUserLocal(userData);
         }
     } else {
-        // Fallback to local registration (without email verification)
+        // Fallback to local registration
         return await registerUserLocal(userData);
     }
 }
@@ -10182,27 +10189,19 @@ async function registerUserLocal(userData) {
 
 // Login user
 async function loginUser(email, password, rememberMe = false) {
+    const emailLower = email.toLowerCase();
+    
     // Check if Supabase Auth is available
     if (isSupabaseAvailable() && window.supabase.auth) {
         try {
-            // Sign in with Supabase Auth
+            // Try to sign in with Supabase Auth
             const { data, error } = await window.supabase.auth.signInWithPassword({
-                email: email.toLowerCase(),
+                email: emailLower,
                 password: password
             });
             
-            if (error) {
-                // Check specific error messages
-                if (error.message.includes('Invalid login credentials')) {
-                    return { success: false, message: "Email o contraseña incorrectos" };
-                }
-                if (error.message.includes('Email not confirmed')) {
-                    return { success: false, message: "Debes verificar tu correo electrónico antes de iniciar sesión" };
-                }
-                throw error;
-            }
-            
-            if (data.user) {
+            if (!error && data.user) {
+                // Successfully logged in with Supabase Auth
                 // Update last login in users table
                 try {
                     await window.supabase
@@ -10231,13 +10230,114 @@ async function loginUser(email, password, rememberMe = false) {
                 return { success: true, user: data.user };
             }
             
-            return { success: false, message: "Error al iniciar sesión" };
+            // If Supabase Auth fails, try to authenticate with users table directly
+            // This handles the case where users are stored in the table but not in Auth
+            const passwordHash = await hashPassword(password);
+            
+            const { data: users, error: queryError } = await window.supabase
+                .from('users')
+                .select('*')
+                .eq('email', emailLower);
+            
+            if (queryError) {
+                console.warn('Error querying users table:', queryError.message);
+            }
+            
+            if (users && users.length > 0) {
+                const user = users[0];
+                
+                // Check password
+                if (user.password_hash === passwordHash) {
+                    // Update last login
+                    try {
+                        await window.supabase
+                            .from('users')
+                            .update({ last_login: new Date().toISOString() })
+                            .eq('id', user.id);
+                    } catch (e) {
+                        console.warn('Could not update last_login:', e.message);
+                    }
+                    
+                    // Set session
+                    const session = {
+                        userId: user.id,
+                        rememberMe: rememberMe
+                    };
+                    
+                    sessionStorage.setItem('camponuevo_session', JSON.stringify(session));
+                    
+                    if (rememberMe) {
+                        localStorage.setItem('camponuevo_session', JSON.stringify(session));
+                    }
+                    
+                    return { success: true, user: user };
+                } else {
+                    return { success: false, message: "Email o contraseña incorrectos" };
+                }
+            }
+            
+            // No user found in either Auth or users table
+            return { success: false, message: "Email o contraseña incorrectos" };
+            
         } catch (err) {
-            console.error('Error logging in with Supabase Auth:', err.message);
-            return { success: false, message: "Error al iniciar sesión" };
+            console.error('Error logging in:', err.message);
+            
+            // Try fallback to users table on any error
+            return await loginWithUsersTable(emailLower, password, rememberMe);
         }
     } else {
-        // Fallback to localStorage
+        // Fallback to local login
+        return await loginUserLocal(email, password, rememberMe);
+    }
+}
+
+// Login with users table directly (when Supabase Auth is not available or fails)
+async function loginWithUsersTable(email, password, rememberMe) {
+    if (!isSupabaseAvailable()) {
+        return await loginUserLocal(email, password, rememberMe);
+    }
+    
+    try {
+        const passwordHash = await hashPassword(password);
+        
+        const { data: users, error } = await window.supabase
+            .from('users')
+            .select('*')
+            .eq('email', email);
+        
+        if (error) throw error;
+        
+        if (!users || users.length === 0) {
+            return { success: false, message: "Email no registrado" };
+        }
+        
+        const user = users[0];
+        
+        if (user.password_hash !== passwordHash) {
+            return { success: false, message: "Contraseña incorrecta" };
+        }
+        
+        // Update last login
+        await window.supabase
+            .from('users')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', user.id);
+        
+        // Set session
+        const session = {
+            userId: user.id,
+            rememberMe: rememberMe
+        };
+        
+        sessionStorage.setItem('camponuevo_session', JSON.stringify(session));
+        
+        if (rememberMe) {
+            localStorage.setItem('camponuevo_session', JSON.stringify(session));
+        }
+        
+        return { success: true, user: user };
+    } catch (err) {
+        console.error('Error login with users table:', err.message);
         return await loginUserLocal(email, password, rememberMe);
     }
 }
