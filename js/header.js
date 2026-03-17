@@ -1,4 +1,6 @@
 (function () {
+    console.log('header.js loaded - starting execution');
+    
     function getCurrentPage() {
         const path = window.location.pathname.toLowerCase();
         const filename = path.split('/').pop() || 'index.html';
@@ -502,7 +504,10 @@
         
         if (btnGoToRegister) {
             console.log('Adding click listener to btnGoToRegister');
-            btnGoToRegister.addEventListener('click', () => openAuthModal('register'));
+            btnGoToRegister.addEventListener('click', () => {
+                console.log('btnGoToRegister clicked - opening register modal');
+                openAuthModal('register');
+            });
         }
         if (btnGoToLogin) btnGoToLogin.addEventListener('click', () => openAuthModal('login'));
         if (btnForgotPassword) btnForgotPassword.addEventListener('click', () => openAuthModal('recovery'));
@@ -579,7 +584,7 @@
             console.log('Adding submit listener to register form');
             registerForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                console.log('Register form submitted');
+                console.log('Register form submitted - calling registerUser');
                 
                 const name = document.getElementById('regName').value;
                 const email = document.getElementById('regEmail').value;
