@@ -58,7 +58,7 @@ window.SHARED_HEADER_HTML = `
                     </div>
                 </div>
 
-                // User Menu / Auth Buttons Container (with relative positioning)
+                <!-- User Menu / Auth Buttons -->
                 <div id="userMenuContainer" class="relative flex items-center gap-2">
                     <div id="userAuthContainer" class="flex items-center gap-2">
                         <!-- Login button - always visible when not logged in -->
