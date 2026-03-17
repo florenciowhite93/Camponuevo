@@ -152,6 +152,84 @@
                     </div>
                 </div>
 
+                <!-- Order Detail Modal -->
+                <div id="orderModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+                        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Detalle del Pedido</h3>
+                                <p id="orderModalId" class="text-sm text-gray-500"></p>
+                            </div>
+                            <button id="btnCloseOrderModal" class="text-gray-400 hover:text-red-500 transition">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="p-6 overflow-y-auto flex-1">
+                            <!-- Order Status -->
+                            <div class="mb-6">
+                                <span id="orderModalStatus" class="inline-flex px-3 py-1 rounded-full text-xs font-bold"></span>
+                                <p id="orderModalDate" class="text-sm text-gray-500 mt-2"></p>
+                            </div>
+
+                            <!-- Customer Info -->
+                            <div class="bg-gray-50 rounded-xl p-4 mb-6">
+                                <h4 class="font-bold text-gray-800 mb-3 flex items-center">
+                                    <i class="fas fa-user mr-2 text-primary"></i>
+                                    Datos del Cliente
+                                </h4>
+                                <div id="orderModalCustomer" class="grid grid-cols-2 gap-4 text-sm">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+
+                            <!-- Delivery Info -->
+                            <div class="bg-gray-50 rounded-xl p-4 mb-6">
+                                <h4 class="font-bold text-gray-800 mb-3 flex items-center">
+                                    <i class="fas fa-truck mr-2 text-primary"></i>
+                                    Información de Entrega
+                                </h4>
+                                <div id="orderModalDelivery" class="text-sm text-gray-600">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+
+                            <!-- Products -->
+                            <div class="mb-6">
+                                <h4 class="font-bold text-gray-800 mb-3 flex items-center">
+                                    <i class="fas fa-shopping-bag mr-2 text-primary"></i>
+                                    Productos
+                                </h4>
+                                <div id="orderModalProducts" class="space-y-3">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+
+                            <!-- Totals -->
+                            <div class="border-t border-gray-200 pt-4">
+                                <div class="flex justify-between text-gray-600 mb-2">
+                                    <span>Subtotal:</span>
+                                    <span id="orderModalSubtotal">-</span>
+                                </div>
+                                <div class="flex justify-between text-gray-600 mb-2">
+                                    <span>IVA (21%):</span>
+                                    <span id="orderModalIva">-</span>
+                                </div>
+                                <div class="flex justify-between text-xl font-bold text-gray-800 mt-4 pt-4 border-t border-gray-200">
+                                    <span>Total:</span>
+                                    <span id="orderModalTotal">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                            <button id="btnCloseOrderModal2" class="w-full bg-primary hover:bg-dark text-white font-bold py-3 rounded-xl transition">
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Security Tab -->
                 <div id="viewSecurity" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
