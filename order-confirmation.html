@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedido Confirmado - Camponuevo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2d5a27',
+                        secondary: '#4caf50',
+                        accent: '#8bc34a',
+                        light: '#f1f8e9',
+                        dark: '#1b5e20'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-light via-white to-gray-50 min-h-screen">
+    <!-- Header -->
+    <div id="site-header-placeholder"></div>
+
+    <!-- Confirmation Content -->
+    <div class="container mx-auto px-4 py-16 max-w-2xl">
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
+            <!-- Success Header -->
+            <div class="bg-gradient-to-r from-primary to-dark p-8 text-center">
+                <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <i class="fas fa-check text-primary text-4xl"></i>
+                </div>
+                <h1 class="text-3xl font-black text-white">¡Pedido Confirmado!</h1>
+                <p class="text-white/80 mt-2">Tu número de pedido es</p>
+            </div>
+
+            <!-- Order Details -->
+            <div class="p-8">
+                <div class="text-center mb-8">
+                    <span id="orderId" class="text-2xl font-bold text-gray-800 bg-gray-100 px-6 py-3 rounded-xl inline-block"></span>
+                </div>
+
+                <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
+                    <div class="flex items-start">
+                        <i class="fas fa-clock text-green-600 text-xl mr-4 mt-1"></i>
+                        <div>
+                            <h3 class="font-bold text-green-800 text-lg">Pendiente de Presupuesto</h3>
+                            <p class="text-green-700 mt-1">A la brevedad nuestro equipo comercial te estará contactando para pasarte el presupuesto detallado.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
+                    <div class="flex items-start">
+                        <i class="fas fa-user text-blue-600 text-xl mr-4 mt-1"></i>
+                        <div>
+                            <h3 class="font-bold text-blue-800">Datos de Contacto</h3>
+                            <div id="customerInfo" class="text-blue-700 mt-2 space-y-1">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Items -->
+                <div class="mb-6">
+                    <h3 class="font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-shopping-bag text-primary mr-3"></i>
+                        Productos Solicitados
+                    </h3>
+                    <div id="orderItems" class="space-y-3">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Order Total -->
+                <div class="border-t border-gray-200 pt-4">
+                    <div class="flex justify-between text-gray-600 mb-2">
+                        <span>Subtotal:</span>
+                        <span id="orderSubtotal">-</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600 mb-2">
+                        <span>IVA (21%):</span>
+                        <span id="orderIva">-</span>
+                    </div>
+                    <div class="flex justify-between text-xl font-bold text-gray-800 mt-4 pt-4 border-t border-gray-200">
+                        <span>Total:</span>
+                        <span id="orderTotal">-</span>
+                    </div>
+                </div>
+
+                <!-- Contact Info -->
+                <div class="mt-8 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                    <p class="text-yellow-800 text-sm text-center">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        ¿Tienes dudas? Contáctanos al <strong>11 4409-6789</strong> o por email a <strong>info@camponuevo.com</strong>
+                    </p>
+                </div>
+
+                <!-- Actions -->
+                <div class="mt-8 flex flex-col sm:flex-row gap-4">
+                    <a href="index.html" class="flex-1 bg-gradient-to-r from-primary to-dark hover:from-dark hover:to-black text-white font-bold py-4 px-6 rounded-xl text-center transition shadow-lg">
+                        <i class="fas fa-home mr-2"></i>
+                        Volver al Inicio
+                    </a>
+                    <a href="catalog.html" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-4 px-6 rounded-xl text-center transition">
+                        <i class="fas fa-shopping-cart mr-2"></i>
+                        Seguir Comprando
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-8 mt-auto">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-white/60">© 2024 Camponuevo. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/data.js"></script>
+    <script src="components/header_content.js"></script>
+    <script src="js/header.js"></script>
+    
+    <script>
+        // Get order data from sessionStorage
+        const orderData = JSON.parse(sessionStorage.getItem('lastOrder') || '{}');
+        
+        if (!orderData.id) {
+            // No order data, redirect to home
+            window.location.href = 'index.html';
+        }
+
+        // Display order info
+        document.getElementById('orderId').textContent = orderData.id || 'N/A';
+        
+        // Display customer info
+        const customerInfo = orderData.customerInfo || {};
+        document.getElementById('customerInfo').innerHTML = `
+            <p><strong>Nombre:</strong> ${customerInfo.name || '-'}</p>
+            <p><strong>Teléfono:</strong> ${customerInfo.phone || '-'}</p>
+            <p><strong>Email:</strong> ${customerInfo.email || '-'}</p>
+            ${customerInfo.identification ? `<p><strong>CUIT/DNI:</strong> ${customerInfo.identification}</p>` : ''}
+        `;
+
+        // Display order items
+        const itemsContainer = document.getElementById('orderItems');
+        const items = orderData.items || [];
+        items.forEach(item => {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'flex justify-between items-center bg-gray-50 rounded-lg p-3';
+            itemEl.innerHTML = `
+                <div class="flex-1">
+                    <p class="font-medium text-gray-800">${item.title}</p>
+                    <p class="text-sm text-gray-500">${item.laboratory}</p>
+                </div>
+                <div class="text-right">
+                    <p class="font-bold text-gray-800">${item.quantity}x</p>
+                    <p class="text-sm text-gray-500">${new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(item.price * item.quantity)}</p>
+                </div>
+            `;
+            itemsContainer.appendChild(itemEl);
+        });
+
+        // Display totals
+        document.getElementById('orderSubtotal').textContent = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(orderData.subtotal || 0);
+        document.getElementById('orderIva').textContent = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(orderData.iva || 0);
+        document.getElementById('orderTotal').textContent = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(orderData.total || 0);
+
+        // Clear cart after viewing confirmation
+        // Don't clear immediately to allow user to see details
+    </script>
+</body>
+</html>

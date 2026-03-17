@@ -10696,20 +10696,38 @@ async function updateUserProfile(userId, updates) {
     if (updates.name) users[userIndex].name = updates.name;
     if (updates.phone !== undefined) users[userIndex].phone = updates.phone;
     if (updates.location !== undefined) users[userIndex].location = updates.location;
+    if (updates.address !== undefined) users[userIndex].address = updates.address;
     if (updates.identification !== undefined) users[userIndex].identification = updates.identification;
     
-    // Update security question if provided
-    if (updates.securityQuestion) {
-        users[userIndex].securityQuestion = updates.securityQuestion;
-    }
-    
-    // Update security answer if provided (hash it first)
-    if (updates.securityAnswer) {
-        const answerHash = await hashPassword(updates.securityAnswer);
-        users[userIndex].securityAnswerHash = answerHash;
-    }
-    
+    // Save to localStorage
     saveUsers(users);
+    
+    // Also save to Supabase if available
+    if (isSupabaseAvailable()) {
+        try {
+            const supabaseUpdates = {
+                id: userId,
+                name: users[userIndex].name,
+                phone: users[userIndex].phone || '',
+                address: users[userIndex].address || '',
+                location: users[userIndex].location || '',
+                identification: users[userIndex].identification || ''
+            };
+            
+            const { error } = await window.supabase
+                .from('users')
+                .upsert(supabaseUpdates);
+            
+            if (error) {
+                console.warn('Could not update user in Supabase:', error.message);
+            } else {
+                console.log('User profile updated in Supabase');
+            }
+        } catch (err) {
+            console.warn('Error updating user in Supabase:', err.message);
+        }
+    }
+    
     return { success: true, user: users[userIndex] };
 }
 
