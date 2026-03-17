@@ -10116,7 +10116,13 @@ async function registerUser(userData) {
             if (data.user && !data.session) {
                 // Email confirmation required - save user to users table with pending status
                 try {
-                    await window.supabase.from('users').upsert({
+                    console.log('Attempting to save user to Supabase:', {
+                        id: data.user.id,
+                        email: userData.email.toLowerCase(),
+                        name: userData.name
+                    });
+                    
+                    const { error: saveError } = await window.supabase.from('users').upsert({
                         id: data.user.id,
                         email: userData.email.toLowerCase(),
                         name: userData.name,
@@ -10124,9 +10130,14 @@ async function registerUser(userData) {
                         created_at: new Date().toISOString(),
                         email_verified: false
                     });
-                    console.log('User saved to Supabase users table (pending verification)');
+                    
+                    if (saveError) {
+                        console.error('Error saving user to users table:', saveError);
+                    } else {
+                        console.log('User saved to Supabase users table successfully');
+                    }
                 } catch (saveErr) {
-                    console.warn('Could not save to users table:', saveErr.message);
+                    console.error('Exception saving to users table:', saveErr);
                 }
                 
                 return { 
@@ -10141,7 +10152,13 @@ async function registerUser(userData) {
             
             // Save user data to Supabase users table
             try {
-                await window.supabase.from('users').upsert({
+                console.log('Attempting to save user to Supabase (auto-confirm):', {
+                    id: userId,
+                    email: userData.email.toLowerCase(),
+                    name: userData.name
+                });
+                
+                const { error: saveError } = await window.supabase.from('users').upsert({
                     id: userId,
                     email: userData.email.toLowerCase(),
                     name: userData.name,
@@ -10150,9 +10167,14 @@ async function registerUser(userData) {
                     last_login: new Date().toISOString(),
                     email_verified: true
                 });
-                console.log('User saved to Supabase users table');
+                
+                if (saveError) {
+                    console.error('Error saving user to users table:', saveError);
+                } else {
+                    console.log('User saved to Supabase users table successfully');
+                }
             } catch (saveErr) {
-                console.warn('Could not save to users table:', saveErr.message);
+                console.error('Exception saving to users table:', saveErr);
             }
             
             // Auto-login after registration
@@ -10177,9 +10199,52 @@ async function registerUser(userData) {
     }
 }
 
-// Local registration fallback
+// Local registration fallback - also tries to save to Supabase
 async function registerUserLocal(userData) {
-    // Initialize and check existing users
+    const userId = generateId();
+    
+    // Try to save to Supabase first
+    if (isSupabaseAvailable()) {
+        try {
+            console.log('Attempting to save user to Supabase (local fallback):', {
+                id: userId,
+                email: userData.email.toLowerCase(),
+                name: userData.name
+            });
+            
+            const { error: supabaseError } = await window.supabase.from('users').upsert({
+                id: userId,
+                email: userData.email.toLowerCase(),
+                name: userData.name,
+                password_hash: await hashPassword(userData.password),
+                created_at: new Date().toISOString(),
+                last_login: new Date().toISOString(),
+                email_verified: true
+            });
+            
+            if (supabaseError) {
+                console.error('Error saving to Supabase:', supabaseError);
+            } else {
+                console.log('User saved to Supabase successfully (local fallback)');
+                
+                // Auto login
+                sessionStorage.setItem('camponuevo_session', JSON.stringify({
+                    userId: userId,
+                    rememberMe: false
+                }));
+                
+                return { 
+                    success: true, 
+                    user: { id: userId, email: userData.email, name: userData.name },
+                    message: "¡Registro exitoso! Bienvenido a Camponuevo."
+                };
+            }
+        } catch (e) {
+            console.error('Exception saving to Supabase:', e);
+        }
+    }
+    
+    // If Supabase save failed, save to localStorage
     initUsers();
     const users = getUsers();
     
@@ -10194,7 +10259,7 @@ async function registerUserLocal(userData) {
     
     // Create user object
     const user = {
-        id: generateId(),
+        id: userId,
         email: userData.email,
         passwordHash: passwordHash,
         name: userData.name,
