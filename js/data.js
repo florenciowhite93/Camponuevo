@@ -9597,6 +9597,13 @@ let homeCategoriesSupabaseLoaded = false;
 
 async function getHomeCategories() {
     if (homeCategoriesCache && homeCategoriesCache.length > 0) {
+        // Clean up undefined entries
+        const valid = homeCategoriesCache.filter(c => c.id);
+        if (valid.length !== homeCategoriesCache.length) {
+            console.log('Cleaning cached home categories:', homeCategoriesCache.length, '->', valid.length);
+            homeCategoriesCache = valid;
+            await saveHomeCategories(valid);
+        }
         console.log('Returning cached home categories:', homeCategoriesCache);
         return homeCategoriesCache;
     }
@@ -9666,13 +9673,27 @@ async function addCategoryToHome(categoryId) {
 
 async function removeCategoryFromHome(categoryId) {
     console.log('Removing category from home:', categoryId);
-    const current = await getHomeCategories();
+    let current = await getHomeCategories();
     console.log('Current home categories:', current);
-    const filtered = current.filter(c => c.id !== categoryId);
-    console.log('Filtered home categories:', filtered);
-    homeCategoriesCache = filtered;
-    await saveHomeCategories(filtered);
-    return filtered;
+    
+    // Filter out undefined categories AND the one being removed
+    current = current.filter(c => c.id && c.id !== categoryId);
+    console.log('Filtered home categories:', current);
+    homeCategoriesCache = current;
+    await saveHomeCategories(current);
+    return current;
+}
+
+// Utility function to clean up home categories with undefined IDs
+async function cleanupHomeCategories() {
+    let current = await getHomeCategories();
+    const cleaned = current.filter(c => c.id);
+    if (cleaned.length !== current.length) {
+        console.log('Cleaning up home categories:', current.length, '->', cleaned.length);
+        homeCategoriesCache = cleaned;
+        await saveHomeCategories(cleaned);
+    }
+    return cleaned;
 }
 
 function reorderHomeCategories(categories) {
