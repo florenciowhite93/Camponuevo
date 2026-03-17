@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 drugItems = product.drugs.map(d => d.trim()).filter(d => d.length > 1);
             } else {
                 drugItems = product.drugs
-                    .split(/[;,\n\r](?![^(]*\))/g)
+                    .split(/\n|\r/g)
                     .map(d => d.trim())
                     .filter(d => d.length > 1);
             }
