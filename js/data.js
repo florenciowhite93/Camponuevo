@@ -9470,6 +9470,8 @@ async function deleteCategory(id) {
     const categories = await getCategories();
     const filtered = categories.filter(c => c.id !== id);
     
+    categoriesCache = filtered;
+    
     // Guardar en localStorage
     localStorage.setItem('camponuevo_categories', JSON.stringify(filtered));
     
@@ -9489,6 +9491,8 @@ async function updateCategoryName(id, newName) {
     const index = categories.findIndex(c => c.id === id);
     if (index !== -1) {
         categories[index].name = newName;
+        
+        categoriesCache = categories;
         
         // Guardar en localStorage
         localStorage.setItem('camponuevo_categories', JSON.stringify(categories));
