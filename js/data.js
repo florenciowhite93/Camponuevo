@@ -10549,6 +10549,7 @@ window.getProductsAsync = getProductsAsync;
 window.getProductById = getProductById;
 window.saveProduct = saveProduct;
 window.deleteProduct = deleteProduct;
+window.deleteProductFromSupabase = deleteProductFromSupabase;
 
 // Force reload products from Supabase
 window.reloadProducts = async function() {

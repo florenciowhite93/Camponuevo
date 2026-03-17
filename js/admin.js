@@ -3341,9 +3341,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const allProducts = getProducts();
             const remainingProducts = allProducts.filter(p => !productsToDelete.includes(p.id));
             
-            saveAllProducts(remainingProducts);
+            productsCache = remainingProducts;
+            localStorage.setItem('camponuevo_products', JSON.stringify(remainingProducts));
             
-            alert(`¡Se han eliminado ${productsToDelete.length} productos exitosamente!`);
+            // Also delete from Supabase
+            productsToDelete.forEach(id => {
+                deleteProductFromSupabase(id);
+            });
+            
+            showToast(`¡Se han eliminado ${productsToDelete.length} productos exitosamente!`);
             bulkDeleteModal.classList.add('hidden');
             
             selectedProductIds.clear();
