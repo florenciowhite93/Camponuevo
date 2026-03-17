@@ -901,14 +901,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Home Categories UI Management ---
-    function renderHomeCategories() {
+    async function renderHomeCategories() {
         const homeCatsContainer = document.getElementById('homeCatsContainer');
         const allCatsContainer = document.getElementById('allCatsContainer');
         const homeCatSelector = document.getElementById('homeCatSelector');
         
         if (!homeCatsContainer || !allCatsContainer || !homeCatSelector) return;
         
-        const allCats = getCategories();
+        const allCats = await getCategories();
         const homeCatData = getHomeCategories();
         
         const categoryIcons = {
