@@ -8972,6 +8972,7 @@ const defaultProducts = [
 ];
 
 // Variable global para almacenar productos cacheados
+window.productsCache = null;
 let productsCache = null;
 let supabaseDataLoaded = false;
 

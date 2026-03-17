@@ -360,8 +360,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Save products to localStorage
                     productsCache = importedProducts;
                     localStorage.setItem('camponuevo_products', JSON.stringify(importedProducts));
+                    console.log('Products saved to localStorage:', importedProducts.length);
                     
                     // Save products to Supabase
+                    console.log('isSupabaseAvailable:', isSupabaseAvailable());
+                    console.log('window.supabase:', window.supabase);
+                    
                     if (isSupabaseAvailable()) {
                         try {
                             console.log('Starting Supabase import...');
