@@ -8984,31 +8984,10 @@ window.productsCache = null;
 let productsCache = null;
 let supabaseDataLoaded = false;
 
-// Initialize database
+// Initialize database - Ya no crea datos por defecto
 function initDB() {
-    try {
-        const data = localStorage.getItem('camponuevo_products');
-        let isEmpty = !data;
-        
-        // Verificar si es un JSON válido y no está vacío
-        if (data) {
-            try {
-                const parsed = JSON.parse(data);
-                isEmpty = !parsed || parsed.length === 0;
-            } catch (e) {
-                // Si hay error al parsear, consideramos los datos corruptos
-                console.warn('Corrupted localStorage data, resetting...');
-                isEmpty = true;
-            }
-        }
-        
-        if (isEmpty) {
-            console.log('Initializing products from default data...');
-            localStorage.setItem('camponuevo_products', JSON.stringify(defaultProducts));
-        }
-    } catch (e) {
-        console.error('Error in initDB:', e);
-    }
+    // Solo verifica que el localStorage tenga datos válidos
+    // No crea nada por defecto
 }
 
 // Get all products - ONLY from Supabase
@@ -9228,21 +9207,7 @@ const defaultSubCategories = [
     "Artículos rurales"
 ];
 
-// Initialize sub-categories in storage if empty
-function initSubCategories() {
-    let stored = localStorage.getItem('camponuevo_subcategories');
-    if (!stored) {
-        localStorage.setItem('camponuevo_subcategories', JSON.stringify(defaultSubCategories));
-    } else {
-        // Ensure "Productos destacados" is always present
-        const cats = JSON.parse(stored);
-        if (!cats.includes('Productos destacados')) {
-            cats.push('Productos destacados');
-            cats.sort();
-            localStorage.setItem('camponuevo_subcategories', JSON.stringify(cats));
-        }
-    }
-}
+// Eliminado: initSubCategories ya no crea datos por defecto
 
 let subCategoriesCache = null;
 let subCategoriesSupabaseLoaded = false;
@@ -9250,10 +9215,12 @@ let subCategoriesSupabaseLoaded = false;
 function getSubCategories() {
     if (subCategoriesCache) return subCategoriesCache;
     
-    initSubCategories();
-    subCategoriesCache = JSON.parse(localStorage.getItem('camponuevo_subcategories') || '[]');
+    // Cargar desde localStorage si existe, si no array vacío
+    const data = localStorage.getItem('camponuevo_subcategories');
+    subCategoriesCache = data ? JSON.parse(data) : [];
     
-    if (!subCategoriesSupabaseLoaded) {
+    // Cargar desde Supabase en background
+    if (!subCategoriesSupabaseLoaded && isSupabaseAvailable()) {
         loadSubCategoriesFromSupabaseInBackground();
     }
     
@@ -9377,12 +9344,8 @@ const defaultCategories = [
     }
 ];
 
-function initCategories() {
-    let stored = localStorage.getItem('camponuevo_categories');
-    if (!stored) {
-        localStorage.setItem('camponuevo_categories', JSON.stringify(defaultCategories));
-    }
-}
+// Eliminado: initCategories ya no crea datos por defecto
+// Los datos ahora vienen solo de Supabase
 
 let categoriesCache = null;
 let categoriesSupabaseLoaded = false;
@@ -9630,14 +9593,10 @@ async function getHomeCategories() {
         return homeCategoriesCache;
     }
     
-    // Generar categorías por defecto si no hay ninguna
-    const cats = await getCategories();
-    console.log('Generating default home categories from categories:', cats.length);
-    const defaultHome = cats.slice(0, 4).map(c => ({ id: c.id, svg: null }));
-    localStorage.setItem('camponuevo_home_categories', JSON.stringify(defaultHome));
-    homeCategoriesCache = defaultHome;
-    console.log('Default home categories created:', defaultHome.length);
-    return defaultHome;
+    // Si no hay datos, retornar array vacío (no crear por defecto)
+    console.log('No home categories found, returning empty array');
+    homeCategoriesCache = [];
+    return homeCategoriesCache;
 }
 
 async function loadHomeCategoriesFromSupabaseInBackground() {
@@ -9749,12 +9708,7 @@ const defaultLaboratories = [
     "Varios"
 ];
 
-// Initialize laboratories in storage if empty
-function initLaboratories() {
-    if (!localStorage.getItem('camponuevo_laboratories')) {
-        localStorage.setItem('camponuevo_laboratories', JSON.stringify(defaultLaboratories));
-    }
-}
+// Eliminado: initLaboratories ya no crea datos por defecto
 
 let laboratoriesCache = null;
 let laboratoriesSupabaseLoaded = false;
@@ -9762,12 +9716,14 @@ let laboratoriesSupabaseLoaded = false;
 function getLaboratories() {
     if (laboratoriesCache) return laboratoriesCache;
     
-    initLaboratories();
-    laboratoriesCache = JSON.parse(localStorage.getItem('camponuevo_laboratories') || '[]');
-    
-    if (!laboratoriesSupabaseLoaded) {
+    // Intentar cargar desde Supabase primero sin crear datos por defecto
+    if (isSupabaseAvailable()) {
         loadLaboratoriesFromSupabaseInBackground();
     }
+    
+    // Cargar desde localStorage si existe, si no array vacío
+    const data = localStorage.getItem('camponuevo_laboratories');
+    laboratoriesCache = data ? JSON.parse(data) : [];
     
     return laboratoriesCache;
 }
@@ -9847,19 +9803,9 @@ async function updateLaboratoryName(oldName, newName) {
 
 // --- label Management ---
 
-const defaultLabels = [
-    { name: "Nuevo", color: "#4caf50" },      // secondary
-    { name: "Oferta", color: "#f44336" },     // red-500
-    { name: "Destacado", color: "#ff9800" },  // amber-500
-    { name: "Promoción", color: "#2196f3" }   // blue-500
-];
+// Eliminado: defaultLabels ya no se crea por defecto
 
-// Initialize labels in storage if empty
-function initLabels() {
-    if (!localStorage.getItem('camponuevo_labels')) {
-        localStorage.setItem('camponuevo_labels', JSON.stringify(defaultLabels));
-    }
-}
+// Eliminado: initLabels ya no crea datos por defecto
 
 let labelsCache = null;
 let labelsSupabaseLoaded = false;
@@ -9867,21 +9813,26 @@ let labelsSupabaseLoaded = false;
 function getLabels() {
     if (labelsCache) return labelsCache;
     
-    initLabels();
-    let labels = JSON.parse(localStorage.getItem('camponuevo_labels') || '[]');
+    // Intentar cargar desde Supabase primero
+    if (isSupabaseAvailable()) {
+        loadLabelsFromSupabaseInBackground();
+    }
     
-    let migrated = false;
+    // Cargar desde localStorage si existe
+    const data = localStorage.getItem('camponuevo_labels');
+    let labels = data ? JSON.parse(data) : [];
+    
+    // Migrar formato antiguo si es necesario
     labels = labels.map(l => {
         if (typeof l === 'string') {
-            migrated = true;
             return { name: l, color: "#2d5a27" };
         }
         return l;
     });
-
-    if (migrated) {
-        localStorage.setItem('camponuevo_labels', JSON.stringify(labels));
-    }
+    
+    labelsCache = labels;
+    return labelsCache;
+}
 
     labelsCache = labels;
     
