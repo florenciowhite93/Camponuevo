@@ -112,7 +112,7 @@ function buildProductCard(product, options = {}) {
                     ${subCatHtml}
                 </div>
                 <h3 class="text-xl font-bold mb-2 text-gray-800 line-clamp-2"><a href="product.html?id=${product.id}" class="hover:text-primary transition">${product.title}</a></h3>
-                <p class="text-sm text-gray-500 mb-4 line-clamp-2">${product.description}</p>
+                <p class="text-sm text-gray-500 mb-4 line-clamp-2">${product.action || product.description || ''}</p>
                 
                 <div class="mt-auto flex justify-between items-center pt-4 border-t border-gray-100">
                     <div>

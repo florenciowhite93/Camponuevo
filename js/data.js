@@ -9013,10 +9013,11 @@ async function getProductsAsync() {
             if (supabaseProducts && supabaseProducts.length > 0) {
                 const mappedProducts = supabaseProducts.map(p => ({
                     id: p.id, title: p.title, price: p.price, laboratory: p.laboratory,
-                    description: p.description, subCategory: p.subcategory,
+                    action: p.action || p.description || '', subCategory: p.subcategory,
                     subCategories: p.subcategories || [], animalBreeds: p.animalbreeds || [],
                     volumeWeight: p.volume, image: p.image, drugs: p.drugs || [],
-                    dose: p.dose, externalLink: p.externallink
+                    dose: p.dose, externalLink: p.externallink,
+                    indications: p.indications || ''
                 }));
                 
                 localStorage.setItem('camponuevo_products', JSON.stringify(mappedProducts));
@@ -9130,7 +9131,8 @@ async function saveProductToSupabase(product) {
             title: product.title,
             price: product.price,
             laboratory: product.laboratory || '',
-            description: product.description || '',
+            action: product.action || product.description || '',
+            indications: product.indications || '',
             subcategory: product.subCategory || product.subcategory || '',
             subcategories: product.subCategories || product.subcategories || [],
             animalbreeds: product.animalBreeds || product.animalbreeds || [],

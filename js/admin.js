@@ -2206,7 +2206,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             products = products.filter(product => {
                 const matchSearch = product.title.toLowerCase().includes(searchTerm) || 
-                                    (product.description || '').toLowerCase().includes(searchTerm);
+                                    (product.action || '').toLowerCase().includes(searchTerm);
                 
                 // Normalize lab comparison for case-insensitivity
                 const productLab = product.laboratory ? product.laboratory.trim() : '';
@@ -2384,8 +2384,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('price').value = product.price;
         document.getElementById('volumeWeight').value = product.volumeWeight;
         document.getElementById('drugs').value = product.drugs;
-        document.getElementById('description').value = product.description;
+        document.getElementById('action').value = product.action || '';
         document.getElementById('dose').value = product.dose;
+        document.getElementById('indications').value = product.indications || '';
         document.getElementById('externalLink').value = product.externalLink || '';
 
         // Handle Image population
@@ -2579,7 +2580,8 @@ document.addEventListener('DOMContentLoaded', () => {
             price: parseFloat(document.getElementById('price').value),
             volumeWeight: document.getElementById('volumeWeight').value,
             drugs: document.getElementById('drugs').value,
-            description: document.getElementById('description').value,
+            action: document.getElementById('action').value,
+            indications: document.getElementById('indications').value,
             dose: document.getElementById('dose').value,
             image: finalImage,
             externalLink: document.getElementById('externalLink').value,

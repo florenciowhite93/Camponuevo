@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const productTitle = document.getElementById('productTitle');
     const productLaboratories = document.getElementById('productLaboratories');
     const productPrice = document.getElementById('productPrice');
-    const productDescription = document.getElementById('productDescription');
+    const productDescription = document.getElementById('productAction');
     const productVol = document.getElementById('productVol');
     const productBreeds = document.getElementById('productBreeds');
     const productDrugs = document.getElementById('productDrugs');
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             ).join('');
         }
         productPrice.textContent = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(product.price);
-        productDescription.textContent = product.description;
+        productDescription.textContent = product.action || product.description || '';
         productVol.textContent = product.volumeWeight || '--';
         productBreeds.textContent = (product.animalBreeds || []).join(', ');
 
@@ -83,6 +83,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             const doseSection = document.getElementById('doseSection');
             if (doseSection) doseSection.classList.add('hidden');
+        }
+
+        // Indications: hide if empty
+        if (product.indications) {
+            document.getElementById('productIndications').textContent = product.indications;
+        } else {
+            const indicationsSection = document.getElementById('indicationsSection');
+            if (indicationsSection) indicationsSection.classList.add('hidden');
         }
 
         // Drugs: render as bulleted list items - handle both array and string

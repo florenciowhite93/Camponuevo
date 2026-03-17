@@ -222,14 +222,14 @@
                             </a>
                         </div>
 
-                        <!-- Descripción -->
+                        <!-- Acción -->
                         <div class="mb-8">
                             <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                                 <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
-                                    <i class="fas fa-align-left mr-2 text-primary"></i>Descripción
+                                    <i class="fas fa-align-left mr-2 text-primary"></i>Acción
                                 </h3>
-                                <p id="productDescription" class="text-gray-700 leading-relaxed text-base">
-                                    Descripción del producto.
+                                <p id="productAction" class="text-gray-700 leading-relaxed text-base">
+                                    Acción del producto.
                                 </p>
                             </div>
                         </div>
@@ -281,7 +281,17 @@
                     </button>
                     
                     <!-- Contenido colapsable -->
-                    <div id="additionalDetailsContent" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                    <div id="additionalDetailsContent" class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+                        <!-- Indicaciones -->
+                        <div id="indicationsSection" class="md:border-r md:border-gray-200 md:pr-6">
+                            <h4 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center">
+                                <i class="fas fa-list-check mr-2 text-primary"></i>Indicaciones
+                            </h4>
+                            <p class="text-gray-700 leading-relaxed text-base whitespace-pre-wrap" id="productIndications">
+                                --
+                            </p>
+                        </div>
+
                         <!-- Dosis y Administración -->
                         <div id="doseSection" class="md:border-r md:border-gray-200 md:pr-6">
                             <h4 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center">

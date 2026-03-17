@@ -155,7 +155,7 @@
                     const searchText = [
                         p.title || '',
                         p.laboratory || '',
-                        p.description || '',
+                        p.action || p.description || '',
                         p.drugs || '',
                         p.subCategory || '',
                         (p.subCategories && p.subCategories.length > 0) ? p.subCategories.join(' ') : '',

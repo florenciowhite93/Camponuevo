@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const searchText = [
                 product.title || '',
                 product.laboratory || '',
-                product.description || '',
+                product.action || product.description || '',
                 product.drugs || '',
                 product.subCategory || '',
                 (product.subCategories && product.subCategories.length > 0) ? product.subCategories.join(' ') : '',
