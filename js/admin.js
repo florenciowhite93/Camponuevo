@@ -1058,10 +1058,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (btnAddLab) {
-        btnAddLab.addEventListener('click', () => {
+        btnAddLab.addEventListener('click', async () => {
             const name = newLabInput.value.trim();
             if (name) {
-                saveLaboratory(name);
+                await saveLaboratory(name);
                 newLabInput.value = '';
                 renderLaboratories();
                 initFilters(getProducts());
@@ -2108,16 +2108,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (btnAddNewSubCatInline) {
-        btnAddNewSubCatInline.addEventListener('click', () => {
+        btnAddNewSubCatInline.addEventListener('click', async () => {
             const name = subCatSearch.value.trim();
             if (name) {
-                saveSubCategory(name); // Save to global list
+                await saveSubCategory(name); // Save to global list and Supabase
                 selectedSubCategories.push(name); // Add to current product
                 renderSubCatPills();
                 subCatSearch.value = '';
                 btnAddNewSubCatInline.classList.add('hidden');
                 subCatDropdown.classList.add('hidden');
                 renderSubCategories(); // Refresh the management list if it's open
+                initFilters(getProducts()); // Refresh filter dropdowns
             }
         });
     }
@@ -2571,7 +2572,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add to laboratories list if not exists
             const labs = getLaboratories();
             if (!labs.includes(laboratorio)) {
-                saveLaboratory(laboratorio);
+                await saveLaboratory(laboratorio);
             }
         } else if (selectedLaboratory) {
             laboratorio = selectedLaboratory;
