@@ -1,19 +1,30 @@
 (function () {
-    function getCurrentPage() {
-        const path = window.location.pathname.toLowerCase();
-        const filename = path.split('/').pop() || 'index.html';
-        
-        if (filename.includes('catalog')) return 'catalog';
-        if (filename.includes('about')) return 'about';
-        if (filename.includes('product')) return 'product';
-        if (filename.includes('user')) return 'user';
-        if (filename.includes('order')) return 'order';
-        return 'index';
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
     }
+    
+    function init() {
+        console.log('header.js starting...');
+        console.log('SHARED_HEADER_HTML available:', !!window.SHARED_HEADER_HTML);
+        
+        function getCurrentPage() {
+            const path = window.location.pathname.toLowerCase();
+            const filename = path.split('/').pop() || 'index.html';
+            
+            if (filename.includes('catalog')) return 'catalog';
+            if (filename.includes('about')) return 'about';
+            if (filename.includes('product')) return 'product';
+            if (filename.includes('user')) return 'user';
+            if (filename.includes('order')) return 'order';
+            return 'index';
+        }
 
-    function initHeader() {
-        const page = getCurrentPage();
-        const hash = window.location.hash;
+        function initHeader() {
+            const page = getCurrentPage();
+            const hash = window.location.hash;
         
         document.querySelectorAll('.nav-link[data-page]').forEach(link => {
             let isActive = false;
