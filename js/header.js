@@ -329,6 +329,7 @@
     // --- Authentication Logic ---
 
     function initAuth() {
+        console.log('initAuth called');
         const userAuthContainer = document.getElementById('userAuthContainer');
         const userMenuContainer = document.getElementById('userMenuContainer');
         const authOverlay = document.getElementById('authOverlay');
@@ -491,10 +492,18 @@
         }
 
         // Event Listeners for Auth Modal
+        console.log('Setting up auth event listeners');
+        console.log('btnCloseAuth:', btnCloseAuth);
+        console.log('authOverlay:', authOverlay);
+        console.log('btnGoToRegister:', btnGoToRegister);
+        
         if (btnCloseAuth) btnCloseAuth.addEventListener('click', closeAuthModal);
         if (authOverlay) authOverlay.addEventListener('click', closeAuthModal);
         
-        if (btnGoToRegister) btnGoToRegister.addEventListener('click', () => openAuthModal('register'));
+        if (btnGoToRegister) {
+            console.log('Adding click listener to btnGoToRegister');
+            btnGoToRegister.addEventListener('click', () => openAuthModal('register'));
+        }
         if (btnGoToLogin) btnGoToLogin.addEventListener('click', () => openAuthModal('login'));
         if (btnForgotPassword) btnForgotPassword.addEventListener('click', () => openAuthModal('recovery'));
         if (btnBackToLogin) btnBackToLogin.addEventListener('click', () => openAuthModal('login'));
@@ -565,9 +574,12 @@
         }
 
         // Handle Register Form
+        console.log('Register form element:', registerForm);
         if (registerForm) {
+            console.log('Adding submit listener to register form');
             registerForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                console.log('Register form submitted');
                 
                 const name = document.getElementById('regName').value;
                 const email = document.getElementById('regEmail').value;
