@@ -5,7 +5,27 @@ function checkSupabaseAvailable() {
     return typeof isSupabaseAvailable === 'function' && isSupabaseAvailable();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+// Wait for cart functions to be available
+function waitForCartFunctions(callback) {
+    let attempts = 0;
+    const maxAttempts = 50;
+    
+    function check() {
+        attempts++;
+        if (typeof getCart === 'function' && typeof clearCart === 'function') {
+            callback();
+        } else if (attempts < maxAttempts) {
+            setTimeout(check, 100);
+        } else {
+            console.error('Timeout waiting for cart functions');
+            callback(); // Continue anyway
+        }
+    }
+    check();
+}
+
+waitForCartFunctions(function() {
+    document.addEventListener('DOMContentLoaded', () => {
     const orderItemsContainer = document.getElementById('orderItemsContainer');
     const orderTotal = document.getElementById('orderTotal');
     const orderCount = document.getElementById('orderCount');
@@ -130,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Form submission
-    orderForm.addEventListener('submit', (e) => {
+    orderForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const cart = getCart();
         if (cart.length === 0) {
@@ -240,4 +260,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     renderOrderItems();
     (async () => await prefillForm())();
+    });
 });
