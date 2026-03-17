@@ -9048,20 +9048,8 @@ async function getProductsAsync(forceReload = false) {
 
 // Sync wrapper for backward compatibility
 function getProducts() {
-    const products = getProductsAsync();
-    if (products && typeof products.then === 'function') {
-        console.warn('getProducts called synchronously but returns a Promise. Use getProductsAsync() for async access.');
-        // Return cached or localStorage while async loads
-        initDB();
-        const data = localStorage.getItem('camponuevo_products');
-        if (data) {
-            try {
-                return JSON.parse(data);
-            } catch (e) { return []; }
-        }
-        return [];
-    }
-    return products || [];
+    // Return cached products directly (loaded via getProductsAsync)
+    return productsCache || [];
 }
 
 // Cargar datos desde Supabase en background (sin bloquear)

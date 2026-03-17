@@ -375,22 +375,35 @@ document.addEventListener('DOMContentLoaded', () => {
                             console.log('Deleted existing products from Supabase');
                             
                             // Map products to Supabase format
-                            const supabaseProducts = importedProducts.map(p => ({
-                                id: p.id,
-                                title: p.title || '',
-                                price: p.price || 0,
-                                laboratory: p.laboratory || '',
-                                action: p.action || p.description || '',
-                                indications: p.indications || '',
-                                subcategory: p.subCategory || p.subcategory || '',
-                                subcategories: p.subCategories || p.subcategories || [],
-                                animalbreeds: p.animalBreeds || p.animalbreeds || [],
-                                volume: p.volumeWeight || p.volume || '',
-                                image: p.image || '',
-                                drugs: p.drugs || [],
-                                dose: p.dose || '',
-                                externallink: p.externalLink || p.externallink || ''
-                            }));
+                            const supabaseProducts = importedProducts.map(p => {
+                                // Helper to convert string or array to proper array
+                                const toArray = (val) => {
+                                    if (Array.isArray(val)) return val;
+                                    if (!val) return [];
+                                    if (typeof val === 'string') {
+                                        // Split by semicolon and filter empty
+                                        return val.split(';').map(s => s.trim()).filter(s => s.length > 0);
+                                    }
+                                    return [];
+                                };
+                                
+                                return {
+                                    id: p.id,
+                                    title: p.title || '',
+                                    price: p.price || 0,
+                                    laboratory: p.laboratory || '',
+                                    action: p.action || p.description || '',
+                                    indications: p.indications || '',
+                                    subcategory: p.subCategory || p.subcategory || '',
+                                    subcategories: toArray(p.subCategories || p.subcategories),
+                                    animalbreeds: toArray(p.animalBreeds || p.animalbreeds),
+                                    volume: p.volumeWeight || p.volume || '',
+                                    image: p.image || '',
+                                    drugs: toArray(p.drugs),
+                                    dose: p.dose || '',
+                                    externallink: p.externalLink || p.externallink || ''
+                                };
+                            });
                             
                             console.log('Inserting to Supabase:', supabaseProducts.length, 'products');
                             
@@ -2287,8 +2300,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Load and render products (with filtering)
-    function renderProducts() {
-        let products = getProducts();
+    async function renderProducts() {
+        const products = productsCache || [];
         
         console.log('renderProducts called, total products:', products.length);
         
