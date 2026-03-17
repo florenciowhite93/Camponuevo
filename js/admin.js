@@ -3338,7 +3338,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const productsToDelete = Array.from(selectedProductIds);
-            const allProducts = getProducts();
+            const allProducts = productsCache || [];
             const deletedProducts = allProducts.filter(p => productsToDelete.includes(p.id));
             const remainingProducts = allProducts.filter(p => !productsToDelete.includes(p.id));
             
