@@ -1,30 +1,19 @@
 (function () {
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-    
-    function init() {
-        console.log('header.js starting...');
-        console.log('SHARED_HEADER_HTML available:', !!window.SHARED_HEADER_HTML);
+    function getCurrentPage() {
+        const path = window.location.pathname.toLowerCase();
+        const filename = path.split('/').pop() || 'index.html';
         
-        function getCurrentPage() {
-            const path = window.location.pathname.toLowerCase();
-            const filename = path.split('/').pop() || 'index.html';
-            
-            if (filename.includes('catalog')) return 'catalog';
-            if (filename.includes('about')) return 'about';
-            if (filename.includes('product')) return 'product';
-            if (filename.includes('user')) return 'user';
-            if (filename.includes('order')) return 'order';
-            return 'index';
-        }
+        if (filename.includes('catalog')) return 'catalog';
+        if (filename.includes('about')) return 'about';
+        if (filename.includes('product')) return 'product';
+        if (filename.includes('user')) return 'user';
+        if (filename.includes('order')) return 'order';
+        return 'index';
+    }
 
-        function initHeader() {
-            const page = getCurrentPage();
-            const hash = window.location.hash;
+    function initHeader() {
+        const page = getCurrentPage();
+        const hash = window.location.hash;
         
         document.querySelectorAll('.nav-link[data-page]').forEach(link => {
             let isActive = false;
@@ -386,94 +375,61 @@
 
         // Update UI based on user session
         async function updateAuthUI() {
-            console.log('Updating auth UI...');
+            const user = await getCurrentUser();
             
-            const userAuthContainer = document.getElementById('userAuthContainer');
-            if (!userAuthContainer) {
-                console.log('userAuthContainer not found');
-                return;
-            }
-            
-            // Add event listener to the static login button if it exists
-            const staticLoginBtn = document.getElementById('btnShowLogin');
-            if (staticLoginBtn && !staticLoginBtn.hasAttribute('data-listener-added')) {
-                staticLoginBtn.addEventListener('click', () => openAuthModal('login'));
-                staticLoginBtn.setAttribute('data-listener-added', 'true');
-            }
-            
-            try {
-                const user = await getCurrentUser();
-                console.log('Current user:', user);
+            if (user && userAuthContainer) {
+                // User is logged in - show dropdown button
+                userAuthContainer.innerHTML = `
+                    <div class="relative">
+                        <button id="btnUserMenu" class="flex items-center gap-2 text-gray-600 hover:text-primary transition p-2 rounded-full hover:bg-gray-100">
+                            <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                ${user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <span class="hidden md:inline text-sm font-medium">${user.name.split(' ')[0]}</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                    </div>
+                `;
                 
-                const loginBtn = document.getElementById('btnShowLogin');
+                // Show dropdown on click
+                const btnUserMenu = document.getElementById('btnUserMenu');
+                if (btnUserMenu) {
+                    btnUserMenu.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const isHidden = userDropdownContainer.classList.contains('hidden');
+                        if (isHidden) {
+                            userDropdownContainer.classList.remove('hidden');
+                            userDropdownContainer.classList.add('scale-100', 'opacity-100');
+                        } else {
+                            userDropdownContainer.classList.add('hidden');
+                            userDropdownContainer.classList.remove('scale-100', 'opacity-100');
+                        }
+                    });
+                }
                 
-                if (user && user.name) {
-                    // User is logged in - hide login button and show user menu
-                    if (loginBtn) {
-                        loginBtn.style.display = 'none';
-                    }
-                    
-                    // Show user menu container
-                    userAuthContainer.innerHTML = `
-                        <div class="relative">
-                            <button id="btnUserMenu" class="flex items-center gap-2 text-gray-600 hover:text-primary transition p-2 rounded-full hover:bg-gray-100">
-                                <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                    ${user.name.charAt(0).toUpperCase()}
-                                </div>
-                                <span class="hidden md:inline text-sm font-medium">${user.name.split(' ')[0]}</span>
-                                <i class="fas fa-chevron-down text-xs"></i>
-                            </button>
-                        </div>
-                    `;
-                    
-                    // Show dropdown on click
-                    const btnUserMenu = document.getElementById('btnUserMenu');
-                    const userDropdownContainer = document.getElementById('userDropdown');
-                    if (btnUserMenu && userDropdownContainer) {
-                        btnUserMenu.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const isHidden = userDropdownContainer.classList.contains('hidden');
-                            if (isHidden) {
-                                userDropdownContainer.classList.remove('hidden');
-                                userDropdownContainer.classList.add('scale-100', 'opacity-100');
-                            } else {
-                                userDropdownContainer.classList.add('hidden');
-                                userDropdownContainer.classList.remove('scale-100', 'opacity-100');
-                            }
-                        });
-                    }
-                    
-                    // Update dropdown info
-                    const userDropdown = document.getElementById('dropdownUserName');
-                    const dropdownUserEmail = document.getElementById('dropdownUserEmail');
-                    if (userDropdown) userDropdown.textContent = user.name;
-                    if (dropdownUserEmail) dropdownUserEmail.textContent = user.email;
-                    
-                } else {
-                    // User is not logged in - ensure login button is visible
-                    if (loginBtn) {
-                        loginBtn.style.display = 'flex';
-                    }
-                }
-            } catch (err) {
-                console.error('Error updating auth UI:', err);
-                // Show login button on error
-                const loginBtn = document.getElementById('btnShowLogin');
-                if (loginBtn) {
-                    loginBtn.style.display = 'flex';
-                }
+                // Update dropdown info
+                if (userDropdown) userDropdown.textContent = user.name;
+                if (dropdownUserEmail) dropdownUserEmail.textContent = user.email;
+                
+            } else if (userAuthContainer) {
+                // User is not logged in - show only login button with improved style
+                userAuthContainer.innerHTML = `
+                    <button id="btnShowLogin" class="bg-gradient-to-r from-primary to-dark hover:from-dark hover:to-black text-white px-5 py-2.5 rounded-full text-sm font-bold transition shadow-md flex items-center gap-2">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Iniciar Sesión</span>
+                    </button>
+                `;
+                
+                // Add event listeners
+                document.getElementById('btnShowLogin').addEventListener('click', () => openAuthModal('login'));
             }
             
             // Close dropdown when clicking outside
-            const userDropdownContainer = document.getElementById('userDropdown');
-            if (userDropdownContainer) {
-                document.addEventListener('click', (e) => {
-                    const btnUserMenu = document.getElementById('btnUserMenu');
-                    if (btnUserMenu && !e.target.closest('#btnUserMenu') && !e.target.closest('#userDropdown')) {
-                        userDropdownContainer.classList.add('hidden');
-                    }
-                });
-            }
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#btnUserMenu') && !e.target.closest('#userDropdown')) {
+                    userDropdownContainer.classList.add('hidden');
+                }
+            });
         }
 
         function openAuthModal(form = 'login') {
@@ -611,14 +567,9 @@
                 
                 if (result.success) {
                     closeAuthModal();
-                    
-                    // Check if email confirmation is required
-                    if (result.requiresEmailConfirmation) {
-                        alert(result.message);
-                    } else {
-                        await updateAuthUI();
-                        alert('¡Cuenta creada exitosamente! Completa tu perfil para acceder a todas las funcionalidades.');
-                    }
+                    await updateAuthUI();
+                    // Show success message
+                    alert('¡Cuenta creada exitosamente! Completa tu perfil para acceder a todas las funcionalidades.');
                 } else {
                     document.getElementById('registerError').classList.remove('hidden');
                     document.getElementById('registerErrorMessage').textContent = result.message;
@@ -718,52 +669,17 @@
 
         // Initialize UI
         (async () => await updateAuthUI())();
-        
-        // Try to initialize header immediately if ready
-        if (!initializeHeaderIfReady()) {
-            // Wait for header HTML and data.js functions
-            let attempts = 0;
-            const maxAttempts = 100;
-            
-            function checkAndInit() {
-                attempts++;
-                if (initializeHeaderIfReady()) {
-                    console.log('Header initialized after', attempts, 'attempts');
-                    // Wait for auth functions
-                    waitForDataFunctions();
-                } else if (attempts < maxAttempts) {
-                    setTimeout(checkAndInit, 100);
-                } else {
-                    console.error('Timeout waiting for header to initialize');
-                    const placeholder = document.getElementById('site-header-placeholder');
-                    if (placeholder) {
-                        placeholder.innerHTML = '<div style="background:#ffccc7; color:#a8071a; padding:15px; text-align:center; border:1px solid #ffa39e;">Error: No se pudo cargar el header</div>';
-                    }
-                }
-            }
-            checkAndInit();
-        }
-        
-        function waitForDataFunctions() {
-            let attempts = 0;
-            const maxAttempts = 50;
-            
-            function checkFunctions() {
-                attempts++;
-                if (typeof registerUser === 'function' && typeof loginUser === 'function' && typeof getCurrentUser === 'function') {
-                    console.log('Data functions available after', attempts, 'attempts');
-                    document.dispatchEvent(new CustomEvent('headerLoaded'));
-                } else if (attempts < maxAttempts) {
-                    setTimeout(checkFunctions, 100);
-                } else {
-                    console.warn('Timeout waiting for data.js functions, continuing anyway');
-                    document.dispatchEvent(new CustomEvent('headerLoaded'));
-                }
-            }
-            checkFunctions();
-        }
     }
-})();
+
+    // --- End Authentication Logic ---
+
+    const placeholder = document.getElementById('site-header-placeholder');
+    if (!placeholder) return;
+
+    if (window.SHARED_HEADER_HTML) {
+        placeholder.outerHTML = window.SHARED_HEADER_HTML;
+        initHeader();
+        initAuth();
         
         // Add event listeners for hash changes with custom offsets
         document.querySelectorAll('.nav-link[href*="about.html#"]').forEach(link => {
@@ -776,8 +692,10 @@
                     let offset = 0;
                     
                     if (hash === 'nosotros') {
+                        // Scroll to top of page for "Nosotros"
                         scrollTarget = 0;
                     } else if (hash === 'contacto') {
+                        // Scroll to #contacto with -120px offset
                         const element = document.getElementById(hash);
                         if (element) {
                             const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
@@ -790,7 +708,11 @@
                             top: scrollTarget,
                             behavior: 'smooth'
                         });
+                        
+                        // Update URL hash without scrolling
                         history.pushState(null, null, `#${hash}`);
+                        
+                        // Update active link state
                         document.querySelectorAll('.nav-link').forEach(l => {
                             l.classList.remove('text-primary', 'font-bold', 'border-b-2', 'border-primary', 'pb-0.5');
                             l.classList.add('text-gray-600', 'hover:text-primary', 'transition');
@@ -801,51 +723,60 @@
                 }
             });
         });
-        
-        return true;
-    }
 
-    // Try to initialize header immediately if ready
-    if (!initializeHeaderIfReady()) {
-        // Wait for header HTML and data.js functions
-        let attempts = 0;
-        const maxAttempts = 100;
-        
-        function checkAndInit() {
-            attempts++;
-            if (initializeHeaderIfReady()) {
-                console.log('Header initialized after', attempts, 'attempts');
-                // Wait for auth functions
-                waitForDataFunctions();
-            } else if (attempts < maxAttempts) {
-                setTimeout(checkAndInit, 100);
-            } else {
-                console.error('Timeout waiting for header to initialize');
-                const placeholder = document.getElementById('site-header-placeholder');
-                if (placeholder) {
-                    placeholder.innerHTML = '<div style="background:#ffccc7; color:#a8071a; padding:15px; text-align:center; border:1px solid #ffa39e;">Error: No se pudo cargar el header</div>';
+        // Handle hash changes (e.g., browser back/forward)
+        window.addEventListener('hashchange', () => {
+            const hash = window.location.hash.substring(1);
+            if (hash && window.location.pathname.includes('about')) {
+                const element = document.getElementById(hash);
+                if (element) {
+                    setTimeout(() => {
+                        const offset = hash === 'contacto' ? -40 : 0;
+                        const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+                        window.scrollTo({
+                            top: elementPosition + offset,
+                            behavior: 'smooth'
+                        });
+                    }, 100);
                 }
             }
-        }
-        checkAndInit();
-    }
-    
-    function waitForDataFunctions() {
-        let attempts = 0;
-        const maxAttempts = 50;
+        });
         
-        function checkFunctions() {
-            attempts++;
-            if (typeof registerUser === 'function' && typeof loginUser === 'function' && typeof getCurrentUser === 'function') {
-                console.log('Data functions available after', attempts, 'attempts');
-                document.dispatchEvent(new CustomEvent('headerLoaded'));
-            } else if (attempts < maxAttempts) {
-                setTimeout(checkFunctions, 100);
-            } else {
-                console.warn('Timeout waiting for data.js functions, continuing anyway');
-                document.dispatchEvent(new CustomEvent('headerLoaded'));
-            }
+        // Dynamically load cart.js if not already present
+        if (!document.querySelector('script[src="js/cart.js"]')) {
+            const cartScript = document.createElement('script');
+            cartScript.src = 'js/cart.js';
+            cartScript.onload = function() {
+                waitForAuthFunctions();
+            };
+            document.body.appendChild(cartScript);
+        } else {
+            waitForAuthFunctions();
         }
-        checkFunctions();
+        
+        function waitForAuthFunctions() {
+            let attempts = 0;
+            const maxAttempts = 50;
+            
+            function check() {
+                attempts++;
+                if (typeof registerUser === 'function' && typeof loginUser === 'function' && typeof getCurrentUser === 'function') {
+                    console.log('Auth functions available after', attempts, 'attempts');
+                    document.dispatchEvent(new CustomEvent('headerLoaded'));
+                } else if (attempts < maxAttempts) {
+                    setTimeout(check, 100);
+                } else {
+                    console.warn('Timeout waiting for auth functions, continuing anyway');
+                    document.dispatchEvent(new CustomEvent('headerLoaded'));
+                }
+            }
+            check();
+        }
+    } else {
+        console.error('SHARED_HEADER_HTML not found. Make sure components/header_content.js is loaded.');
+        console.log('Available window keys:', Object.keys(window).filter(k => k.includes('HEADER')));
+        if (placeholder) {
+            placeholder.innerHTML = '<div style="background:#fff3cd; color:#856404; padding:15px; text-align:center; border:1px solid #ffeeba;">Verificando carga del menú...</div>';
+        }
     }
 })();

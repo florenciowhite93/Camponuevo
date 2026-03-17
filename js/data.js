@@ -10179,57 +10179,6 @@ async function registerUserLocal(userData) {
     
     return { success: true, user: user };
 }
-            sessionStorage.setItem('camponuevo_session', JSON.stringify({
-                userId: userId,
-                rememberMe: false
-            }));
-            
-            return { success: true, user: { id: userId, email: userData.email, name: userData.name } };
-        } catch (err) {
-            console.error('Error registering user in Supabase:', err.message);
-            return { success: false, message: "Error al registrar usuario" };
-        }
-    } else {
-        // Fallback to localStorage
-        initUsers();
-        const users = getUsers();
-        
-        // Check if email already exists
-        const existingUser = users.find(u => u.email.toLowerCase() === userData.email.toLowerCase());
-        if (existingUser) {
-            return { success: false, message: "El email ya está registrado" };
-        }
-        
-        // Hash password
-        const passwordHash = await hashPassword(userData.password);
-        
-        // Create user object (without security data initially)
-        const user = {
-            id: generateId(),
-            email: userData.email,
-            passwordHash: passwordHash,
-            name: userData.name,
-            phone: "",
-            securityQuestion: "",
-            securityAnswerHash: "",
-            location: "",
-            identification: "",
-            createdAt: new Date().toISOString(),
-            lastLogin: new Date().toISOString()
-        };
-        
-        users.push(user);
-        saveUsers(users);
-        
-        // Auto login after registration
-        sessionStorage.setItem('camponuevo_session', JSON.stringify({
-            userId: user.id,
-            rememberMe: false
-        }));
-        
-        return { success: true, user: user };
-    }
-}
 
 // Login user
 async function loginUser(email, password, rememberMe = false) {
@@ -10319,13 +10268,12 @@ async function loginUserLocal(email, password, rememberMe) {
     };
     
     sessionStorage.setItem('camponuevo_session', JSON.stringify(session));
-        
-        if (rememberMe) {
-            localStorage.setItem('camponuevo_session', JSON.stringify(session));
-        }
-        
-        return { success: true, user: user };
+    
+    if (rememberMe) {
+        localStorage.setItem('camponuevo_session', JSON.stringify(session));
     }
+    
+    return { success: true, user: user };
 }
 
 // Logout user
@@ -10421,11 +10369,6 @@ async function getUserFromTable(userId) {
         return users && users.length > 0 ? users[0] : null;
     } catch (err) {
         console.warn('Error fetching user from table:', err.message);
-        return null;
-    }
-}
-        }
-    } catch (e) {
         return null;
     }
 }
