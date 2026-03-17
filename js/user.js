@@ -334,16 +334,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         statusEl.textContent = order.status;
         statusEl.className = `inline-flex px-3 py-1 rounded-full text-xs font-bold ${statusColors[order.status] || 'bg-gray-100 text-gray-800'}`;
         
-        // Set customer info
-        const customerInfo = order.customerInfo || {};
-        document.getElementById('orderModalCustomer').innerHTML = `
-            <div><strong>Nombre:</strong> ${customerInfo.name || '-'}</div>
-            <div><strong>Teléfono:</strong> ${customerInfo.phone || '-'}</div>
-            <div><strong>Email:</strong> ${customerInfo.email || '-'}</div>
-            <div><strong>CUIT/DNI:</strong> ${customerInfo.identification || '-'}</div>
-        `;
-        
         // Set delivery info
+        const customerInfo = order.customerInfo || {};
+        const delivery = customerInfo.delivery || {};
         const delivery = customerInfo.delivery || {};
         let deliveryText = '';
         if (delivery.method === 'pickup') {
