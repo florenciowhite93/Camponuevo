@@ -783,18 +783,8 @@
             }
         });
         
-        // Dynamically load cart.js if not already present
-        if (!document.querySelector('script[src="js/cart.js"]')) {
-            const cartScript = document.createElement('script');
-            cartScript.src = 'js/cart.js';
-            cartScript.onload = function() {
-                // Wait for data.js functions to be available
-                waitForDataFunctions();
-            };
-            document.body.appendChild(cartScript);
-        } else {
-            waitForDataFunctions();
-        }
+        // Wait for data.js functions and then dispatch headerLoaded
+        waitForDataFunctions();
         
         function waitForDataFunctions() {
             let attempts = 0;
@@ -803,11 +793,12 @@
             function checkFunctions() {
                 attempts++;
                 if (typeof registerUser === 'function' && typeof loginUser === 'function' && typeof getCurrentUser === 'function') {
+                    console.log('Data functions available after', attempts, 'attempts');
                     document.dispatchEvent(new CustomEvent('headerLoaded'));
                 } else if (attempts < maxAttempts) {
                     setTimeout(checkFunctions, 100);
                 } else {
-                    console.error('Timeout waiting for data.js functions');
+                    console.warn('Timeout waiting for data.js functions, continuing anyway');
                     document.dispatchEvent(new CustomEvent('headerLoaded'));
                 }
             }
