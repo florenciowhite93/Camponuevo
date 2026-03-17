@@ -967,8 +967,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
             
-            div.querySelector('button').onclick = () => {
-                removeCategoryFromHome(cat.id);
+            div.querySelector('button').onclick = async () => {
+                await removeCategoryFromHome(cat.id);
                 renderHomeCategories();
             };
             

@@ -147,13 +147,16 @@ async function getHomeCategoriesFromSupabase() {
 async function saveHomeCategoriesToSupabase(homeCategories) {
     if (!isSupabaseAvailable()) return false;
     try {
+        console.log('Saving home categories to Supabase:', homeCategories);
         await window.supabase.from('home_categories').delete().neq('id', '');
         const { error } = await window.supabase.from('home_categories').insert(
-            homeCategories.map((hc, index) => ({ id: hc.id, categoryid: hc.categoryId, position: index }))
+            homeCategories.map((hc, index) => ({ id: hc.id, categoryid: hc.id, position: index }))
         );
         if (error) throw error;
+        console.log('Home categories saved to Supabase');
         return true;
     } catch (err) {
+        console.error('Error saving home categories to Supabase:', err);
         return false;
     }
 }
@@ -9656,8 +9659,11 @@ async function addCategoryToHome(categoryId) {
 }
 
 async function removeCategoryFromHome(categoryId) {
+    console.log('Removing category from home:', categoryId);
     const current = await getHomeCategories();
+    console.log('Current home categories:', current);
     const filtered = current.filter(c => c.id !== categoryId);
+    console.log('Filtered home categories:', filtered);
     await saveHomeCategories(filtered);
     return filtered;
 }
