@@ -3330,7 +3330,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Confirm delete
     if (btnConfirmBulkDelete) {
-        btnConfirmBulkDelete.addEventListener('click', () => {
+        btnConfirmBulkDelete.addEventListener('click', async () => {
             const confirmText = bulkDeleteConfirmInput.value.trim().toUpperCase();
             if (confirmText !== 'ELIMINAR') {
                 alert('Por favor escribe ELIMINAR para confirmar.');
@@ -3339,17 +3339,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const productsToDelete = Array.from(selectedProductIds);
             const allProducts = getProducts();
+            const deletedProducts = allProducts.filter(p => productsToDelete.includes(p.id));
             const remainingProducts = allProducts.filter(p => !productsToDelete.includes(p.id));
             
+            // Save deleted products for undo
+            const deletedProductsCopy = JSON.parse(JSON.stringify(deletedProducts));
+            
+            // Update local storage
             productsCache = remainingProducts;
             localStorage.setItem('camponuevo_products', JSON.stringify(remainingProducts));
             
-            // Also delete from Supabase
-            productsToDelete.forEach(id => {
-                deleteProductFromSupabase(id);
-            });
+            // Delete from Supabase
+            for (const id of productsToDelete) {
+                await deleteProductFromSupabase(id);
+            }
             
-            showToast(`¡Se han eliminado ${productsToDelete.length} productos exitosamente!`);
+            showToast(
+                `¡Se han eliminado ${productsToDelete.length} productos exitosamente!`,
+                'Deshacer',
+                () => {
+                    // Restore deleted products
+                    const restoredProducts = [...productsCache, ...deletedProductsCopy];
+                    productsCache = restoredProducts;
+                    localStorage.setItem('camponuevo_products', JSON.stringify(restoredProducts));
+                    
+                    // Restore in Supabase
+                    restoredProducts.forEach(p => saveProduct(p));
+                    
+                    renderProducts();
+                }
+            );
+            
             bulkDeleteModal.classList.add('hidden');
             
             selectedProductIds.clear();
