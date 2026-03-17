@@ -10127,8 +10127,7 @@ async function registerUser(userData) {
                         email: userData.email.toLowerCase(),
                         name: userData.name,
                         password_hash: await hashPassword(userData.password),
-                        created_at: new Date().toISOString(),
-                        email_verified: false
+                        created_at: new Date().toISOString()
                     });
                     
                     if (saveError) {
@@ -10164,8 +10163,7 @@ async function registerUser(userData) {
                     name: userData.name,
                     password_hash: await hashPassword(userData.password),
                     created_at: new Date().toISOString(),
-                    last_login: new Date().toISOString(),
-                    email_verified: true
+                    last_login: new Date().toISOString()
                 });
                 
                 if (saveError) {
@@ -10218,8 +10216,7 @@ async function registerUserLocal(userData) {
                 name: userData.name,
                 password_hash: await hashPassword(userData.password),
                 created_at: new Date().toISOString(),
-                last_login: new Date().toISOString(),
-                email_verified: true
+                last_login: new Date().toISOString()
             });
             
             if (supabaseError) {

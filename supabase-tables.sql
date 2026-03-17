@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS users (
     security_answer_hash TEXT,
     location TEXT,
     identification TEXT,
+    email_verified BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     last_login TIMESTAMP WITH TIME ZONE
 );
@@ -89,6 +90,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- ALTER TABLE users ADD COLUMN IF NOT EXISTS location TEXT;
 -- ALTER TABLE users ADD COLUMN IF NOT EXISTS identification TEXT;
 -- ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false;
 
 -- =============================================================================
 -- HABILITAR ROW LEVEL SECURITY (RLS)
