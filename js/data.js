@@ -9252,12 +9252,33 @@ async function loadSubCategoriesFromSupabaseInBackground() {
 }
 
 // Save/Update a sub-category
-function saveSubCategory(name) {
+async function saveSubCategory(name) {
     let cats = getSubCategories();
     if (!cats.includes(name)) {
         cats.push(name);
         cats.sort();
         localStorage.setItem('camponuevo_subcategories', JSON.stringify(cats));
+        subCategoriesCache = cats;
+    }
+    
+    // Also save to Supabase
+    if (isSupabaseAvailable()) {
+        try {
+            const { data: existing } = await window.supabase
+                .from('subcategories')
+                .select('name')
+                .eq('name', name)
+                .single();
+            
+            if (!existing) {
+                await window.supabase
+                    .from('subcategories')
+                    .insert([{ name: name }]);
+                console.log('Subcategory saved to Supabase:', name);
+            }
+        } catch (err) {
+            console.error('Error saving subcategory to Supabase:', err.message);
+        }
     }
 }
 
@@ -9698,12 +9719,33 @@ async function loadLaboratoriesFromSupabaseInBackground() {
 }
 
 // Save/Update a laboratory
-function saveLaboratory(name) {
+async function saveLaboratory(name) {
     let labs = getLaboratories();
     if (!labs.includes(name)) {
         labs.push(name);
         labs.sort();
         localStorage.setItem('camponuevo_laboratories', JSON.stringify(labs));
+        laboratoriesCache = labs;
+    }
+    
+    // Also save to Supabase
+    if (isSupabaseAvailable()) {
+        try {
+            const { data: existing } = await window.supabase
+                .from('laboratories')
+                .select('name')
+                .eq('name', name)
+                .single();
+            
+            if (!existing) {
+                await window.supabase
+                    .from('laboratories')
+                    .insert([{ name: name }]);
+                console.log('Laboratory saved to Supabase:', name);
+            }
+        } catch (err) {
+            console.error('Error saving laboratory to Supabase:', err.message);
+        }
     }
 }
 
@@ -9796,7 +9838,7 @@ async function loadLabelsFromSupabaseInBackground() {
 }
 
 // Save/Update a label object
-function saveLabel(labelObj, originalName = null) {
+async function saveLabel(labelObj, originalName = null) {
     let labels = getLabels();
     
     if (originalName && originalName !== labelObj.name) {
@@ -9821,6 +9863,27 @@ function saveLabel(labelObj, originalName = null) {
     
     labels.sort((a, b) => a.name.localeCompare(b.name));
     localStorage.setItem('camponuevo_labels', JSON.stringify(labels));
+    labelsCache = labels;
+    
+    // Also save to Supabase
+    if (isSupabaseAvailable()) {
+        try {
+            const { data: existing } = await window.supabase
+                .from('labels')
+                .select('name')
+                .eq('name', labelObj.name)
+                .single();
+            
+            if (!existing) {
+                await window.supabase
+                    .from('labels')
+                    .insert([{ name: labelObj.name }]);
+                console.log('Label saved to Supabase:', labelObj.name);
+            }
+        } catch (err) {
+            console.error('Error saving label to Supabase:', err.message);
+        }
+    }
 }
 
 // Function to update label name across all products
