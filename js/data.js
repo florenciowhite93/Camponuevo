@@ -9844,15 +9844,6 @@ function getLabels() {
     return labelsCache;
 }
 
-    labelsCache = labels;
-    
-    if (!labelsSupabaseLoaded) {
-        loadLabelsFromSupabaseInBackground();
-    }
-    
-    return labelsCache;
-}
-
 async function loadLabelsFromSupabaseInBackground() {
     if (labelsSupabaseLoaded) return;
     try {

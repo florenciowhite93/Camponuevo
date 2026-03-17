@@ -718,25 +718,52 @@
 
         // Initialize UI
         (async () => await updateAuthUI())();
+        
+        // Try to initialize header immediately if ready
+        if (!initializeHeaderIfReady()) {
+            // Wait for header HTML and data.js functions
+            let attempts = 0;
+            const maxAttempts = 100;
+            
+            function checkAndInit() {
+                attempts++;
+                if (initializeHeaderIfReady()) {
+                    console.log('Header initialized after', attempts, 'attempts');
+                    // Wait for auth functions
+                    waitForDataFunctions();
+                } else if (attempts < maxAttempts) {
+                    setTimeout(checkAndInit, 100);
+                } else {
+                    console.error('Timeout waiting for header to initialize');
+                    const placeholder = document.getElementById('site-header-placeholder');
+                    if (placeholder) {
+                        placeholder.innerHTML = '<div style="background:#ffccc7; color:#a8071a; padding:15px; text-align:center; border:1px solid #ffa39e;">Error: No se pudo cargar el header</div>';
+                    }
+                }
+            }
+            checkAndInit();
+        }
+        
+        function waitForDataFunctions() {
+            let attempts = 0;
+            const maxAttempts = 50;
+            
+            function checkFunctions() {
+                attempts++;
+                if (typeof registerUser === 'function' && typeof loginUser === 'function' && typeof getCurrentUser === 'function') {
+                    console.log('Data functions available after', attempts, 'attempts');
+                    document.dispatchEvent(new CustomEvent('headerLoaded'));
+                } else if (attempts < maxAttempts) {
+                    setTimeout(checkFunctions, 100);
+                } else {
+                    console.warn('Timeout waiting for data.js functions, continuing anyway');
+                    document.dispatchEvent(new CustomEvent('headerLoaded'));
+                }
+            }
+            checkFunctions();
+        }
     }
-
-    // --- End Authentication Logic ---
-
-    function initializeHeaderIfReady() {
-        const placeholder = document.getElementById('site-header-placeholder');
-        if (!placeholder) {
-            console.log('Header placeholder not found');
-            return false;
-        }
-        
-        if (!window.SHARED_HEADER_HTML) {
-            return false;
-        }
-        
-        // Header HTML is ready, initialize it
-        placeholder.outerHTML = window.SHARED_HEADER_HTML;
-        initHeader();
-        initAuth();
+})();
         
         // Add event listeners for hash changes with custom offsets
         document.querySelectorAll('.nav-link[href*="about.html#"]').forEach(link => {
@@ -773,24 +800,6 @@
                     }
                 }
             });
-        });
-
-        // Handle hash changes
-        window.addEventListener('hashchange', () => {
-            const hash = window.location.hash.substring(1);
-            if (hash && window.location.pathname.includes('about')) {
-                const element = document.getElementById(hash);
-                if (element) {
-                    setTimeout(() => {
-                        const offset = hash === 'contacto' ? -40 : 0;
-                        const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
-                        window.scrollTo({
-                            top: elementPosition + offset,
-                            behavior: 'smooth'
-                        });
-                    }, 100);
-                }
-            }
         });
         
         return true;
