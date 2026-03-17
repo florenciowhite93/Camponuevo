@@ -9003,8 +9003,8 @@ function initDB() {
 }
 
 // Get all products - prioritize Supabase over localStorage
-async function getProductsAsync() {
-    if (productsCache) return productsCache;
+async function getProductsAsync(forceReload = false) {
+    if (productsCache && !forceReload) return productsCache;
     
     // Try to load from Supabase first if available
     if (isSupabaseAvailable()) {
@@ -10548,6 +10548,13 @@ window.getProductsAsync = getProductsAsync;
 window.getProductById = getProductById;
 window.saveProduct = saveProduct;
 window.deleteProduct = deleteProduct;
+
+// Force reload products from Supabase
+window.reloadProducts = async function() {
+    productsCache = null;
+    localStorage.removeItem('camponuevo_products');
+    return await getProductsAsync(true);
+};
 window.getCategories = getCategories;
 window.getCategoryById = getCategoryById;
 window.saveCategory = saveCategory;
