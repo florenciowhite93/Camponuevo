@@ -72,13 +72,18 @@ async function getCategoriesFromSupabase() {
 }
 
 async function saveCategoriesToSupabase(categories) {
-    if (!isSupabaseAvailable()) return false;
+    if (!isSupabaseAvailable()) {
+        console.log('Supabase not available, skipping categories save');
+        return false;
+    }
     try {
+        console.log('Saving categories to Supabase:', categories.length);
         await window.supabase.from('categories').delete().neq('id', '');
         const { error } = await window.supabase.from('categories').insert(
             categories.map(c => ({ id: c.id, name: c.name, subcategories: c.subCategories || [], svg: c.svg }))
         );
         if (error) throw error;
+        console.log('Categories saved to Supabase successfully');
         return true;
     } catch (err) {
         console.error('Error saving categories to Supabase:', err.message);
