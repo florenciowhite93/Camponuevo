@@ -8,6 +8,53 @@ function getImageUrl(image) {
     return 'https://placehold.co/40x40?text=Img';
 }
 
+// Toast notification system with undo
+let undoAction = null;
+const TOAST_DURATION = 10000;
+
+function showToast(message, action = null, undoCallback = null) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = 'bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg flex items-center justify-between gap-4 min-w-[300px] animate-slide-in';
+    toast.style.animation = 'slideIn 0.3s ease-out';
+    
+    let html = `<span>${message}</span>`;
+    
+    if (action && undoCallback) {
+        undoAction = undoCallback;
+        html += `
+            <button onclick="window.undoLastAction()" class="text-blue-400 hover:text-blue-300 font-medium text-sm underline">
+                Deshacer
+            </button>
+        `;
+    }
+    
+    toast.innerHTML = html;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-in forwards';
+        setTimeout(() => {
+            if (toast.parentNode) toast.remove();
+            if (undoAction === undoCallback) undoAction = null;
+        }, 300);
+    }, TOAST_DURATION);
+}
+
+window.undoLastAction = function() {
+    if (undoAction) {
+        undoAction();
+        undoAction = null;
+        
+        const container = document.getElementById('toastContainer');
+        if (container) container.innerHTML = '';
+        
+        showToast('Acción deshecha');
+    }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     try {
     // Initialize categories (migrate if needed)
@@ -2451,9 +2498,26 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.promptDelete = function(id) {
-        if (confirm('¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.')) {
+        const products = getProducts();
+        const productToDelete = products.find(p => p.id === id);
+        
+        if (!productToDelete) {
+            showToast('Producto no encontrado');
+            return;
+        }
+        
+        if (confirm('¿Estás seguro de que deseas eliminar este producto?')) {
             deleteProduct(id);
             renderProducts();
+            
+            showToast(
+                'Producto eliminado',
+                'Deshacer',
+                () => {
+                    saveProduct(productToDelete);
+                    renderProducts();
+                }
+            );
         }
     };
 

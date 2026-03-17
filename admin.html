@@ -25,6 +25,14 @@
     <style>
         body { font-family: 'Poppins', sans-serif; background-color: #fafafa; }
         .svg-preview svg { width: 1.25rem; height: 1.25rem; fill: #2d5a27; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
     </style>
 </head>
 <body class="bg-gray-100 h-screen w-screen overflow-hidden">
@@ -1182,6 +1190,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
