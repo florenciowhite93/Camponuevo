@@ -10064,10 +10064,85 @@ function initUsers() {
     }
 }
 
-// Get all users
+// Get all users (from localStorage + optionally from Supabase)
+let usersSupabaseLoaded = false;
+
 function getUsers() {
     initUsers();
     return JSON.parse(localStorage.getItem('camponuevo_users'));
+}
+
+// Load users from Supabase in background
+async function loadUsersFromSupabaseInBackground() {
+    if (usersSupabaseLoaded) return;
+    if (!isSupabaseAvailable()) return;
+    
+    try {
+        const { data: supabaseUsers, error } = await window.supabase
+            .from('users')
+            .select('*');
+        
+        if (error) throw error;
+        
+        if (supabaseUsers && supabaseUsers.length > 0) {
+            // Merge with local users (Supabase users take precedence)
+            const localUsers = getUsers();
+            const supabaseUserIds = new Set(supabaseUsers.map(u => u.id));
+            
+            // Add local users that don't exist in Supabase
+            const mergedUsers = [...supabaseUsers];
+            localUsers.forEach(localUser => {
+                if (!supabaseUserIds.has(localUser.id)) {
+                    mergedUsers.push(localUser);
+                }
+            });
+            
+            // Save merged users to localStorage
+            saveUsers(mergedUsers);
+            usersSupabaseLoaded = true;
+            console.log('Users loaded from Supabase:', supabaseUsers.length);
+        }
+    } catch (err) {
+        console.warn('Could not load users from Supabase:', err.message);
+    }
+}
+
+// Get all users including from Supabase (for admin)
+async function getAllUsers() {
+    // Trigger background load
+    loadUsersFromSupabaseInBackground();
+    
+    // Return local users (background load will update them)
+    return getUsers();
+}
+
+// Get all orders from Supabase (for admin)
+async function getAllOrdersFromSupabase() {
+    if (!isSupabaseAvailable()) return [];
+    
+    try {
+        const { data: orders, error } = await window.supabase
+            .from('orders')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        return orders.map(o => ({
+            id: o.id, 
+            userId: o.userid, 
+            items: o.products ? JSON.parse(o.products) : [],
+            customerInfo: o.customer_info ? JSON.parse(o.customer_info) : null,
+            subtotal: o.subtotal,
+            iva: o.iva,
+            total: o.total, 
+            status: o.status, 
+            createdAt: o.created_at
+        }));
+    } catch (err) {
+        console.warn('Could not load orders from Supabase:', err.message);
+        return [];
+    }
 }
 
 // Save users to storage

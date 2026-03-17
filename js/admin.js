@@ -617,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (tab === 'products') renderProducts();
-        if (tab === 'clients') renderClients();
+        if (tab === 'clients') loadAndRenderClients();
         if (tab === 'orders') renderOrders();
         if (tab === 'cats') renderCategories();
         if (tab === 'subCats') renderSubCategories();
@@ -1898,16 +1898,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Client Management ---
     let currentEditingClientId = null;
+    let allOrdersCache = null;
 
-    function renderClients(searchTerm = '') {
+    // Load clients from Supabase and render
+    async function loadAndRenderClients(searchTerm = '') {
         if (!clientsContainer) return;
+        
+        // Load users from Supabase if available
+        if (typeof loadUsersFromSupabaseInBackground === 'function') {
+            await loadUsersFromSupabaseInBackground();
+        }
+        
+        // Load all orders from Supabase if available
+        if (!allOrdersCache && typeof getAllOrdersFromSupabase === 'function') {
+            allOrdersCache = await getAllOrdersFromSupabase();
+            console.log('Orders loaded from Supabase for admin:', allOrdersCache.length);
+        }
         
         let clients = typeof getUsers === 'function' ? getUsers() : [];
         
         if (searchTerm) {
             clients = clients.filter(c => 
-                c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (c.name && c.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
                 (c.phone && c.phone.includes(searchTerm))
             );
         }
@@ -1920,9 +1933,12 @@ document.addEventListener('DOMContentLoaded', () => {
             clientsEmptyState.classList.add('hidden');
             
             clientsContainer.innerHTML = clients.map(client => {
-                const orders = typeof getOrdersByUser === 'function' ? getOrdersByUser(client.id) : [];
-                const orderCount = orders.length;
-                const totalSpent = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+                // Get orders for this client
+                const orders = allOrdersCache ? allOrdersCache.filter(o => o.userId === client.id) : [];
+                const localOrders = typeof getOrdersByUser === 'function' ? getOrdersByUser(client.id) : [];
+                const allClientOrders = [...orders, ...localOrders.filter(lo => !orders.find(o => o.id === lo.id))];
+                const orderCount = allClientOrders.length;
+                const totalSpent = allClientOrders.reduce((sum, o) => sum + (o.total || 0), 0);
                 
                 return `
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition cursor-pointer" onclick="openClientModal('${client.id}')">
@@ -1945,8 +1961,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    window.openClientModal = function(clientId) {
-        const clients = getUsers();
+    window.openClientModal = async function(clientId) {
+        // Ensure orders are loaded
+        if (!allOrdersCache && typeof getAllOrdersFromSupabase === 'function') {
+            allOrdersCache = await getAllOrdersFromSupabase();
+        }
+        
+        const clients = typeof getUsers === 'function' ? getUsers() : [];
         const client = clients.find(c => c.id === clientId);
         
         if (!client) return;
@@ -1960,11 +1981,14 @@ document.addEventListener('DOMContentLoaded', () => {
         clientLocationInput.value = client.location || '';
         clientIdentificationInput.value = client.identification || '';
         
-        // Show orders
-        const orders = getOrdersByUser(client.id);
-        if (orders.length > 0) {
+        // Get orders for this client (from cache + local)
+        const orders = allOrdersCache ? allOrdersCache.filter(o => o.userId === client.id) : [];
+        const localOrders = typeof getOrdersByUser === 'function' ? getOrdersByUser(client.id) : [];
+        const allClientOrders = [...orders, ...localOrders.filter(lo => !orders.find(o => o.id === lo.id))];
+        
+        if (allClientOrders.length > 0) {
             clientOrdersSection.classList.remove('hidden');
-            clientOrdersList.innerHTML = orders.map(order => `
+            clientOrdersList.innerHTML = allClientOrders.map(order => `
                 <div class="bg-gray-50 p-2 rounded-lg flex justify-between items-center text-sm hover:bg-gray-100 cursor-pointer transition" onclick="viewOrderDetail('${order.id}')">
                     <div>
                         <span class="font-medium text-primary">#${order.id ? order.id.substring(0, 8) : ''}</span>
@@ -2056,16 +2080,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         clientModal.classList.add('hidden');
-        renderClients(clientSearch ? clientSearch.value : '');
+        loadAndRenderClients(clientSearch ? clientSearch.value : '');
     }
 
     function deleteClient() {
         if (currentEditingClientId && confirm('¿Está seguro de eliminar este cliente?')) {
-            let clients = getUsers();
+            let clients = typeof getUsers === 'function' ? getUsers() : [];
             clients = clients.filter(c => c.id !== currentEditingClientId);
-            saveUsers(clients);
+            if (typeof saveUsers === 'function') saveUsers(clients);
             clientModal.classList.add('hidden');
-            renderClients(clientSearch ? clientSearch.value : '');
+            loadAndRenderClients(clientSearch ? clientSearch.value : '');
         }
     }
 
@@ -2091,7 +2115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     if (clientSearch) {
-        clientSearch.addEventListener('input', (e) => renderClients(e.target.value));
+        clientSearch.addEventListener('input', (e) => loadAndRenderClients(e.target.value));
     }
 
     // --- Sub-Category Picker Logic (Modal) ---
