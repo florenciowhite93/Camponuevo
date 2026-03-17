@@ -9596,7 +9596,10 @@ let homeCategoriesCache = null;
 let homeCategoriesSupabaseLoaded = false;
 
 async function getHomeCategories() {
-    if (homeCategoriesCache) return homeCategoriesCache;
+    if (homeCategoriesCache && homeCategoriesCache.length > 0) {
+        console.log('Returning cached home categories:', homeCategoriesCache);
+        return homeCategoriesCache;
+    }
     
     // Intentar cargar desde Supabase primero
     if (isSupabaseAvailable()) {
@@ -9608,23 +9611,26 @@ async function getHomeCategories() {
                 return homeCategoriesCache;
             }
         } catch (err) {
-            console.warn('Error loading home categories from Supabase, trying localStorage:', err.message);
+            console.warn('Error loading home categories from Supabase:', err.message);
         }
     }
     
-    // Fallback a localStorage
-    initCategories();
+    // Fallback a localStorage o generar默认值
     const stored = localStorage.getItem('camponuevo_home_categories');
-    if (!stored) {
-        const cats = await getCategories();
-        const defaultHome = cats.slice(0, 4).map(c => ({ id: c.id, svg: null }));
-        localStorage.setItem('camponuevo_home_categories', JSON.stringify(defaultHome));
-        homeCategoriesCache = defaultHome;
-        return defaultHome;
+    if (stored) {
+        homeCategoriesCache = JSON.parse(stored);
+        console.log('Home categories loaded from localStorage:', homeCategoriesCache.length);
+        return homeCategoriesCache;
     }
-    homeCategoriesCache = JSON.parse(stored);
-    console.log('Home categories loaded from localStorage:', homeCategoriesCache.length);
-    return homeCategoriesCache;
+    
+    // Generar categorías por defecto si no hay ninguna
+    const cats = await getCategories();
+    console.log('Generating default home categories from categories:', cats.length);
+    const defaultHome = cats.slice(0, 4).map(c => ({ id: c.id, svg: null }));
+    localStorage.setItem('camponuevo_home_categories', JSON.stringify(defaultHome));
+    homeCategoriesCache = defaultHome;
+    console.log('Default home categories created:', defaultHome.length);
+    return defaultHome;
 }
 
 async function loadHomeCategoriesFromSupabaseInBackground() {
@@ -9664,6 +9670,7 @@ async function removeCategoryFromHome(categoryId) {
     console.log('Current home categories:', current);
     const filtered = current.filter(c => c.id !== categoryId);
     console.log('Filtered home categories:', filtered);
+    homeCategoriesCache = filtered;
     await saveHomeCategories(filtered);
     return filtered;
 }
