@@ -968,7 +968,9 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             
             div.querySelector('[data-remove-home]').onclick = async function() {
-                await removeCategoryFromHome(this.dataset.removeHome);
+                const catId = this.getAttribute('data-remove-home');
+                console.log('Remove button clicked for:', catId);
+                await removeCategoryFromHome(catId);
                 renderHomeCategories();
             };
             
