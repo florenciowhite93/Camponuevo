@@ -2732,16 +2732,17 @@ document.addEventListener('DOMContentLoaded', () => {
         renderProducts();
     });
     }
-
-    // Close on click outside modal content
-    if (productModal) {
-        productModal.addEventListener('click', (e) => {
-            if (e.target === productModal) {
-                closeModal();
-            }
-        });
-    }
-
+    
+    // Close on click outside modal content - DISABLED
+    // The modal should only close via X button, Save, or Cancel
+    // if (productModal) {
+    //     productModal.addEventListener('click', (e) => {
+    //         if (e.target === productModal) {
+    //             closeModal();
+    //         }
+    //     });
+    // }
+    
     // Add filter event listeners
     console.log('adminSearch exists:', !!adminSearch);
     console.log('adminLabFilter exists:', !!adminLabFilter);
