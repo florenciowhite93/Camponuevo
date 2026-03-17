@@ -9185,12 +9185,24 @@ function deleteProduct(id) {
 async function deleteProductFromSupabase(id) {
     if (!isSupabaseAvailable()) return;
     try {
-        const { error } = await window.supabase
+        // Get all products with this ID first
+        const { data: duplicates, error: fetchError } = await window.supabase
             .from('products')
-            .delete()
+            .select('id, title')
             .eq('id', id);
-        if (error) throw error;
-        console.log('Product deleted from Supabase:', id);
+        
+        if (fetchError) throw fetchError;
+        
+        // Delete only the first one (to handle duplicates one at a time)
+        if (duplicates && duplicates.length > 0) {
+            const { error } = await window.supabase
+                .from('products')
+                .delete()
+                .eq('id', id)
+                .limit(1);
+            if (error) throw error;
+            console.log('Product deleted from Supabase:', id, '(remaining duplicates:', duplicates.length - 1, ')');
+        }
     } catch (err) {
         console.error('Error deleting product from Supabase:', err.message);
     }
