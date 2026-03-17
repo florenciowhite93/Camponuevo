@@ -10305,17 +10305,20 @@ async function resendVerificationEmail(email) {
 // Login user
 async function loginUser(email, password, rememberMe = false) {
     const emailLower = email.toLowerCase();
+    console.log('Login attempt for:', emailLower);
     
     // Check if Supabase Auth is available
     if (isSupabaseAvailable() && window.supabase.auth) {
         try {
             // Try to sign in with Supabase Auth
+            console.log('Trying Supabase Auth signInWithPassword...');
             const { data, error } = await window.supabase.auth.signInWithPassword({
                 email: emailLower,
                 password: password
             });
             
             if (!error && data.user) {
+                console.log('Supabase Auth login successful');
                 // Successfully logged in with Supabase Auth
                 // Update last login in users table
                 try {
@@ -10345,6 +10348,8 @@ async function loginUser(email, password, rememberMe = false) {
                 return { success: true, user: data.user };
             }
             
+            console.log('Supabase Auth error:', error);
+            
             // Check if error is due to email not confirmed
             if (error && error.message && error.message.toLowerCase().includes('email not confirmed')) {
                 return { 
@@ -10356,6 +10361,7 @@ async function loginUser(email, password, rememberMe = false) {
             
             // If Supabase Auth fails, try to authenticate with users table directly
             // This handles the case where users are stored in the table but not in Auth
+            console.log('Trying to find user in users table...');
             const passwordHash = await hashPassword(password);
             
             const { data: users, error: queryError } = await window.supabase
@@ -10363,12 +10369,17 @@ async function loginUser(email, password, rememberMe = false) {
                 .select('*')
                 .eq('email', emailLower);
             
+            console.log('Users table query result:', users, queryError);
+            
             if (queryError) {
                 console.warn('Error querying users table:', queryError.message);
             }
             
             if (users && users.length > 0) {
                 const user = users[0];
+                console.log('User found in table:', user.email);
+                console.log('Stored password_hash:', user.password_hash);
+                console.log('Computed password_hash:', passwordHash);
                 
                 // Check password
                 if (user.password_hash === passwordHash) {
