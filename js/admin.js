@@ -472,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Tab Management ---
-    function switchTab(tab) {
+    async function switchTab(tab) {
         const tabs = [
             { id: 'products', btn: tabProducts, view: viewProducts, nav: navProducts },
             { id: 'clients', btn: tabClients, view: viewClients, nav: navClients },
@@ -555,10 +555,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Category UI Management ---
-    function renderCategories() {
+    async function renderCategories() {
         if (!catsContainer) return;
         migrateSubCategoriesToCategories();
-        const categories = getCategories();
+        const categories = await getCategories();
         catsContainer.innerHTML = '';
         
         if (categories.length === 0) {
@@ -602,15 +602,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    window.handleDeleteCat = function(id) {
+    window.handleDeleteCat = async function(id) {
         if (confirm('¿Estás seguro de eliminar esta categoría? Las subcategorías no se eliminarán.')) {
-            deleteCategory(id);
+            await deleteCategory(id);
             renderCategories();
         }
     }
 
-    window.removeSubCatFromCategory = function(categoryId, subCatName) {
-        removeSubCategoryFromCategory(categoryId, subCatName);
+    window.removeSubCatFromCategory = async function(categoryId, subCatName) {
+        await removeSubCategoryFromCategory(categoryId, subCatName);
         renderCategories();
     }
 
@@ -678,10 +678,10 @@ document.addEventListener('DOMContentLoaded', () => {
         renderEditCatModal(categoryId);
     }
 
-    window.openEditCatNameModal = function(categoryId, currentName) {
+    window.openEditCatNameModal = async function(categoryId, currentName) {
         const newName = prompt('Nuevo nombre de la categoría:', currentName);
         if (newName && newName.trim() && newName !== currentName) {
-            updateCategoryName(categoryId, newName.trim());
+            await updateCategoryName(categoryId, newName.trim());
             renderCategories();
         }
     }
