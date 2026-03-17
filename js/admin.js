@@ -307,16 +307,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = async (event) => {
                 const text = event.target.result;
-                handleCSVImport(text);
+                await handleCSVImport(text);
                 csvImportInput.value = ''; // Reset input
             };
             reader.readAsText(file);
         });
     }
 
-    function handleCSVImport(csvText) {
+    async function handleCSVImport(csvText) {
         try {
             const lines = csvText.split('\n');
             const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));

@@ -10589,7 +10589,6 @@ window.getCart = getCart;
 window.saveCart = saveCart;
 window.addToCart = addToCart;
 window.removeFromCart = removeFromCart;
-window.updateCartItemQuantity = updateCartItemQuantity;
 window.clearCart = clearCart;
 window.getSecurityQuestions = getSecurityQuestions;
 window.generateId = generateId;
