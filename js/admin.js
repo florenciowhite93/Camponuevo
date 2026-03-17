@@ -2304,7 +2304,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load and render products (with filtering)
     async function renderProducts() {
-        const products = productsCache || [];
+        let products = productsCache || [];
         
         console.log('renderProducts called, total products:', products.length);
         
