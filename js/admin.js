@@ -961,14 +961,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${cat.svg ? `<button class="text-gray-400 hover:text-red-500 p-1" onclick="removeCategorySvg('${cat.id}')" title="Quitar SVG">
                         <i class="fas fa-trash-alt text-sm"></i>
                     </button>` : ''}
-                    <button class="text-gray-400 hover:text-red-500 p-1" title="Quitar del inicio">
+                    <button class="text-gray-400 hover:text-red-500 p-1" title="Quitar del inicio" data-remove-home="${cat.id}">
                         <i class="fas fa-times text-sm"></i>
                     </button>
                 </div>
             `;
             
-            div.querySelector('button').onclick = async () => {
-                await removeCategoryFromHome(cat.id);
+            div.querySelector('[data-remove-home]').onclick = async function() {
+                await removeCategoryFromHome(this.dataset.removeHome);
                 renderHomeCategories();
             };
             
