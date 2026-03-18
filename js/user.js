@@ -1,6 +1,26 @@
 // js/user.js - User Profile and Order History Logic
 
-document.addEventListener('DOMContentLoaded', async () => {
+// Wait for data.js functions to be available
+function waitForDataFunctions(callback) {
+    let attempts = 0;
+    const maxAttempts = 50;
+    
+    function check() {
+        attempts++;
+        if (typeof getCurrentUser === 'function' && typeof getCart === 'function') {
+            callback();
+        } else if (attempts < maxAttempts) {
+            setTimeout(check, 100);
+        } else {
+            console.error('Timeout waiting for data functions');
+            callback(); // Continue anyway
+        }
+    }
+    check();
+}
+
+waitForDataFunctions(function() {
+    document.addEventListener('DOMContentLoaded', async () => {
     // Check if user is logged in
     const currentUser = await getCurrentUser();
     
@@ -337,7 +357,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Set delivery info
         const customerInfo = order.customerInfo || {};
         const delivery = customerInfo.delivery || {};
-        const delivery = customerInfo.delivery || {};
         let deliveryText = '';
         if (delivery.method === 'pickup') {
             deliveryText = 'Retiro en oficina (Paraguay 754)';
@@ -407,4 +426,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize
     initProfileForm();
     loadOrders();
+    });
 });
