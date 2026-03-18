@@ -160,7 +160,12 @@ async function saveHomeCategoriesToSupabase(homeCategories) {
         console.log('Saving home categories to Supabase:', homeCategories);
         await window.supabase.from('home_categories').delete().neq('id', '');
         const { error } = await window.supabase.from('home_categories').insert(
-            homeCategories.map((hc, index) => ({ id: hc.id, categoryid: hc.id, position: index }))
+            homeCategories.map((hc, index) => ({ 
+                id: hc.id, 
+                categoryid: hc.id, 
+                position: index,
+                svg: hc.svg || null
+            }))
         );
         if (error) throw error;
         console.log('Home categories saved to Supabase');
@@ -9582,7 +9587,6 @@ let homeCategoriesSupabaseLoaded = false;
 
 async function getHomeCategories() {
     if (homeCategoriesCache && homeCategoriesCache.length > 0) {
-        // Clean up undefined entries
         const valid = homeCategoriesCache.filter(c => c.id);
         if (valid.length !== homeCategoriesCache.length) {
             console.log('Cleaning cached home categories:', homeCategoriesCache.length, '->', valid.length);
@@ -9598,6 +9602,17 @@ async function getHomeCategories() {
         try {
             const supabaseHomeCats = await getHomeCategoriesFromSupabase();
             if (supabaseHomeCats && supabaseHomeCats.length > 0) {
+                // Merge with localStorage to preserve SVG data
+                const stored = localStorage.getItem('camponuevo_home_categories');
+                if (stored) {
+                    const localCats = JSON.parse(stored);
+                    supabaseHomeCats.forEach(supabaseCat => {
+                        const localCat = localCats.find(lc => lc.id === supabaseCat.id);
+                        if (localCat && localCat.svg) {
+                            supabaseCat.svg = localCat.svg;
+                        }
+                    });
+                }
                 homeCategoriesCache = supabaseHomeCats;
                 console.log('Home categories loaded from Supabase:', homeCategoriesCache.length);
                 return homeCategoriesCache;
@@ -9607,7 +9622,7 @@ async function getHomeCategories() {
         }
     }
     
-    // Fallback a localStorage o generar默认值
+    // Fallback a localStorage
     const stored = localStorage.getItem('camponuevo_home_categories');
     if (stored) {
         homeCategoriesCache = JSON.parse(stored);
@@ -9615,7 +9630,6 @@ async function getHomeCategories() {
         return homeCategoriesCache;
     }
     
-    // Si no hay datos, retornar array vacío (no crear por defecto)
     console.log('No home categories found, returning empty array');
     homeCategoriesCache = [];
     return homeCategoriesCache;
