@@ -724,12 +724,12 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCategories();
     }
 
-    window.openEditCatModal = function(categoryId) {
-        const cat = getCategoryById(categoryId);
+    window.openEditCatModal = async function(categoryId) {
+        const cat = await getCategoryById(categoryId);
         if (!cat) return;
         
         const allSubCats = getSubCategories();
-        const assignedSubCats = cat.subCategories;
+        const assignedSubCats = cat.subCategories || [];
         const availableSubCats = allSubCats.filter(s => !assignedSubCats.includes(s));
         
         let modalHtml = `
@@ -776,16 +776,16 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
 
-    window.renderEditCatModal = function(categoryId) {
+    window.renderEditCatModal = async function(categoryId) {
         const modal = document.getElementById('editCatModal');
         if (modal) modal.remove();
-        openEditCatModal(categoryId);
+        await openEditCatModal(categoryId);
     }
 
-    window.addSubCatToCategoryFromModal = function(categoryId, subCatName) {
+    window.addSubCatToCategoryFromModal = async function(categoryId, subCatName) {
         if (!subCatName) return;
-        addSubCategoryToCategory(categoryId, subCatName);
-        renderEditCatModal(categoryId);
+        await addSubCategoryToCategory(categoryId, subCatName);
+        await renderEditCatModal(categoryId);
     }
 
     window.openEditCatNameModal = async function(categoryId, currentName) {
