@@ -220,7 +220,7 @@
                 `;
             } else {
                 searchResultItems.innerHTML = matches.map(p => `
-                    <a href="catalog.html?search=${encodeURIComponent(query)}" class="flex items-center gap-3 p-3 hover:bg-gray-50 transition border-b border-gray-50 last:border-0">
+                    <a href="product.html?id=${p.id}" class="flex items-center gap-3 p-3 hover:bg-gray-50 transition border-b border-gray-50 last:border-0">
                         <div class="w-10 h-10 flex-shrink-0 bg-white border border-gray-100 rounded-lg overflow-hidden p-1">
                             <img src="${p.image || 'https://placehold.co/100x100?text=Sin+Img'}" alt="${p.title}" class="w-full h-full object-contain">
                         </div>
