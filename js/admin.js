@@ -1018,11 +1018,11 @@ document.addEventListener('DOMContentLoaded', () => {
         initDragAndDrop();
     }
     
-    window.handleSvgUpload = function(categoryId, input) {
+    window.handleSvgUpload = async function(categoryId, input) {
         const file = input.files[0];
         if (file && file.type === 'image/svg+xml') {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 const svgContent = e.target.result;
                 // Extraer solo el contenido SVG sin el wrapper
                 const parser = new DOMParser();
@@ -1038,7 +1038,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     svgElement.style.color = '#2d5a27';
                     
                     const sanitizedSvg = svgElement.outerHTML;
-                    updateCategorySvg(categoryId, sanitizedSvg);
+                    await updateCategorySvg(categoryId, sanitizedSvg);
                     renderHomeCategories();
                 }
             };

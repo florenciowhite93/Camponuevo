@@ -9681,14 +9681,16 @@ function reorderHomeCategories(categories) {
     saveHomeCategories(categories);
 }
 
-function updateCategorySvg(categoryId, svgContent) {
-    const current = getHomeCategories();
-    const cat = current.find(c => c.id === categoryId);
+async function updateCategorySvg(categoryId, svgContent) {
+    const current = await getHomeCategories();
+    const currentArray = Array.isArray(current) ? current : [];
+    const cat = currentArray.find(c => c && c.id === categoryId);
+    
     if (cat) {
         cat.svg = svgContent;
-        saveHomeCategories(current);
+        await saveHomeCategories(currentArray);
     }
-    return current;
+    return currentArray;
 }
 
 function isCategoryInHome(categoryId) {
