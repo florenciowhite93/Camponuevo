@@ -10611,6 +10611,8 @@ function logoutUser() {
 
 // Get current logged in user
 async function getCurrentUser() {
+    console.log('getCurrentUser called');
+    
     // Check if Supabase Auth has a session
     if (isSupabaseAvailable() && window.supabase.auth) {
         try {
@@ -10618,13 +10620,30 @@ async function getCurrentUser() {
             
             if (error) throw error;
             
+            console.log('Session from Supabase Auth:', session);
+            
             if (!session) {
                 // Check sessionStorage as fallback
                 const storedSession = sessionStorage.getItem('camponuevo_session') || localStorage.getItem('camponuevo_session');
-                if (!storedSession) return null;
+                if (!storedSession) {
+                    console.log('No session found');
+                    return null;
+                }
                 
                 const sessionData = JSON.parse(storedSession);
-                return await getUserFromTable(sessionData.userId);
+                console.log('Using stored session:', sessionData);
+                
+                // Try to get user from Supabase table
+                const userFromTable = await getUserFromTable(sessionData.userId);
+                if (userFromTable) {
+                    console.log('User from table:', userFromTable);
+                    return userFromTable;
+                }
+                
+                // Fallback to local
+                const users = getUsers();
+                const user = users.find(u => u.id === sessionData.userId);
+                return user || null;
             }
             
             // Get user data from auth
@@ -10635,19 +10654,25 @@ async function getCurrentUser() {
             if (user) {
                 // Try to get additional data from users table
                 const additionalData = await getUserFromTable(user.id);
+                console.log('Additional data from table:', additionalData);
                 
                 // Merge data
-                return {
+                const mergedUser = {
                     id: user.id,
                     email: user.email,
                     name: additionalData?.name || user.user_metadata?.name || '',
-                    ...additionalData
+                    phone: additionalData?.phone || '',
+                    address: additionalData?.address || '',
+                    location: additionalData?.location || '',
+                    identification: additionalData?.identification || ''
                 };
+                console.log('Merged user:', mergedUser);
+                return mergedUser;
             }
             
             return null;
         } catch (err) {
-            console.error('Error getting current user from Supabase Auth:', err.message);
+            console.error('Error getting current user:', err.message);
             
             // Fallback to stored session
             const storedSession = sessionStorage.getItem('camponuevo_session') || localStorage.getItem('camponuevo_session');
@@ -10971,6 +10996,7 @@ window.getOrders = getOrders;
 window.saveOrder = saveOrder;
 window.getOrdersByUser = getOrdersByUser;
 window.getNextOrderNumber = getNextOrderNumber;
+window.getUserFromTable = getUserFromTable;
 window.registerUser = registerUser;
 window.loginUser = loginUser;
 window.logoutUser = logoutUser;
