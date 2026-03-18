@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // WhatsApp Link
         const waMessage = encodeURIComponent(`Hola Camponuevo, me interesa el producto: *${product.title}* de ${product.laboratory}.`);
-        btnWhatsApp.href = `https://wa.me/5491112345678?text=${waMessage}`;
+        btnWhatsApp.href = `https://wa.me/5491144096789?text=${waMessage}`;
 
         // Add to cart click
         btnAddToCart.addEventListener('click', () => {
