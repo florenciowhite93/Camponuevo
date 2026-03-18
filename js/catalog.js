@@ -74,6 +74,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('Products after re-init:', allProducts.length);
     }
 
+    // Cache categories for filtering
+    let cachedCategories = [];
+
     // Initialize Labs and Sub-categories Dropdown
     async function initFilters() {
         // Labs
@@ -88,11 +91,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // Categories - getCategories is async so we await it
+        // Categories - cache them for filtering
         if (catFilter) {
-            const categories = typeof getCategories === 'function' ? await getCategories() : [];
+            cachedCategories = typeof getCategories === 'function' ? await getCategories() : [];
             catFilter.innerHTML = '<option value="">Todas las categorías</option>';
-            categories.forEach(cat => {
+            cachedCategories.forEach(cat => {
                 const option = document.createElement('option');
                 option.value = cat.id;
                 option.textContent = cat.name;
@@ -160,15 +163,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Category filter: check if product's subCategories belong to selected category
             let matchCat = true;
             if (selectedCat !== '') {
-                if (typeof getCategories === 'function') {
-                    const categories = getCategories();
-                    const category = categories.find(c => c.id === selectedCat);
-                    if (category && category.subCategories.length > 0) {
-                        const productSubCats = product.subCategories || [];
-                        matchCat = productSubCats.some(subCat => category.subCategories.includes(subCat));
-                    } else {
-                        matchCat = false;
-                    }
+                const category = cachedCategories.find(c => c.id === selectedCat);
+                if (category && category.subCategories && category.subCategories.length > 0) {
+                    const productSubCats = product.subCategories || [];
+                    matchCat = productSubCats.some(subCat => category.subCategories.includes(subCat));
+                } else {
+                    matchCat = false;
                 }
             }
             
@@ -360,8 +360,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         subCatFilter.innerHTML = '<option value="">Todas las sub-categorías</option>';
         
-        if (categoryId && typeof getCategoryById === 'function') {
-            const category = getCategoryById(categoryId);
+        if (categoryId) {
+            const category = cachedCategories.find(c => c.id === categoryId);
             if (category && category.subCategories && category.subCategories.length > 0) {
                 category.subCategories.forEach(subCat => {
                     const option = document.createElement('option');
