@@ -53,7 +53,8 @@ CREATE TABLE IF NOT EXISTS labels (
 CREATE TABLE IF NOT EXISTS home_categories (
     id TEXT PRIMARY KEY,
     categoryid TEXT,
-    position INTEGER
+    position INTEGER,
+    svg TEXT
 );
 
 -- Tabla: orders (Pedidos)
@@ -156,6 +157,12 @@ CREATE POLICY "Allow delete users" ON users FOR DELETE USING (true);
 -- =============================================================================
 -- ALTER TABLE products ADD COLUMN IF NOT EXISTS action TEXT;
 -- ALTER TABLE products ADD COLUMN IF NOT EXISTS indications TEXT;
+
+-- =============================================================================
+-- MIGRACIÓN: Agregar columna svg a home_categories (si no existe)
+-- Ejecutar en el Editor SQL de Supabase si la tabla ya existe
+-- =============================================================================
+ALTER TABLE home_categories ADD COLUMN IF NOT EXISTS svg TEXT;
 
 -- =============================================================================
 -- VERIFICACIÓN
