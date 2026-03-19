@@ -9192,11 +9192,9 @@ async function saveProductToSupabase(product) {
             .eq('id', product.id)
             .single();
         
-        // Set created_at: keep original if exists, otherwise set current date
-        productData.created_at = existingProduct?.created_at || new Date().toISOString();
-        
         if (existingProduct) {
-            // Update - keep original created_at
+            // Update: keep original created_at (even if null)
+            productData.created_at = existingProduct.created_at;
             const { error } = await window.supabase
                 .from('products')
                 .update(productData)
@@ -9204,7 +9202,8 @@ async function saveProductToSupabase(product) {
             if (error) throw error;
             console.log('Product updated in Supabase:', product.title);
         } else {
-            // Insert - new product with current created_at
+            // Insert: set new created_at
+            productData.created_at = new Date().toISOString();
             const { error } = await window.supabase
                 .from('products')
                 .insert([productData]);
