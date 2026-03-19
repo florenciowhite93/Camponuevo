@@ -55,7 +55,8 @@ async function saveProductsToSupabase(products) {
                 drugs: p.drugs || [],
                 dose: p.dose,
                 externallink: p.externalLink,
-                created_at: new Date().toISOString()
+                created_at: new Date().toISOString(),
+                labels: p.labels || []
             })));
         
         if (insertError) throw insertError;
