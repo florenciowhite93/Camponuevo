@@ -9032,7 +9032,8 @@ async function getProductsAsync(forceReload = false) {
                     subCategories: p.subcategories || [], animalBreeds: p.animalbreeds || [],
                     volumeWeight: p.volume, image: p.image, drugs: p.drugs || [],
                     dose: p.dose, externalLink: p.externallink,
-                    indications: p.indications || ''
+                    indications: p.indications || '',
+                    labels: p.labels || []
                 }));
                 
                 // Sync to localStorage for offline access
@@ -9078,7 +9079,8 @@ async function loadFromSupabaseInBackground() {
                 description: p.description, subCategory: p.subcategory,
                 subCategories: p.subcategories || [], animalBreeds: p.animalbreeds || [],
                 volumeWeight: p.volume, image: p.image, drugs: p.drugs || [],
-                dose: p.dose, externalLink: p.externallink
+                dose: p.dose, externalLink: p.externallink,
+                labels: p.labels || []
             }));
             
             // Guardar en localStorage para futuras cargas
