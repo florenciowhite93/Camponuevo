@@ -127,6 +127,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         productImage.src = getImageUrl(product.image);
 
+        // Labels
+        const productLabels = document.getElementById('productLabels');
+        if (productLabels && product.labels && product.labels.length > 0) {
+            productLabels.innerHTML = product.labels.map(label => {
+                const color = typeof getColorForLabel === 'function' ? getColorForLabel(label) : '#2d5a27';
+                return `<span class="text-white text-[11px] font-black px-3 py-1 rounded-full shadow-lg uppercase tracking-tighter" style="background-color: ${color}">${label}</span>`;
+            }).join('');
+        }
+
         // Animal SVG icons - use shared animalIcons.js
         if (typeof getAnimalIconsHtml === 'function') {
             const breeds = product.animalBreeds || [];
