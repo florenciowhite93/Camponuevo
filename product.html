@@ -4,23 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Producto - Camponuevo</title>
-    <!-- Security Headers -->
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self';
-        script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh;
-        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;
-        img-src 'self' data: https: blob:;
-        font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;
-        connect-src 'self' https://itlczokcdxgzgqrortpm.supabase.co https://*.supabase.co https://*.supabase.com https://cdnjs.cloudflare.com https://esm.sh https://api.resend.com;
-        frame-ancestors 'none';
-        form-action 'self';
-        base-uri 'self';
-    ">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-    <!-- Head -->
-    <link rel="icon" type="image/svg+xml" href="img/Asset 7.svg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -195,9 +178,6 @@
                 <div class="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col md:flex-row mb-8">
                     <!-- Image Side -->
                     <div class="md:w-1/2 img-panel flex items-center justify-center relative md:border-r md:border-gray-200" style="min-height: 500px;">
-                        <div id="productLabels" class="absolute top-4 left-4 flex flex-col gap-2 z-10">
-                            <!-- Labels via JS -->
-                        </div>
                         <img id="productImage" src="https://via.placeholder.com/600" alt="Producto"
                             class="max-w-[120%] w-[120%] h-auto object-contain"
                             onerror="this.src='https://via.placeholder.com/600?text=Sin+imagen'">
@@ -242,14 +222,14 @@
                             </a>
                         </div>
 
-                        <!-- Acción -->
+                        <!-- Descripción -->
                         <div class="mb-8">
                             <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                                 <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
-                                    <i class="fas fa-align-left mr-2 text-primary"></i>Acción
+                                    <i class="fas fa-align-left mr-2 text-primary"></i>Descripción
                                 </h3>
-                                <p id="productAction" class="text-gray-700 leading-relaxed text-base">
-                                    Acción del producto.
+                                <p id="productDescription" class="text-gray-700 leading-relaxed text-base">
+                                    Descripción del producto.
                                 </p>
                             </div>
                         </div>
@@ -301,17 +281,7 @@
                     </button>
                     
                     <!-- Contenido colapsable -->
-                    <div id="additionalDetailsContent" class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
-                        <!-- Indicaciones -->
-                        <div id="indicationsSection" class="md:border-r md:border-gray-200 md:pr-6">
-                            <h4 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center">
-                                <i class="fas fa-list-check mr-2 text-primary"></i>Indicaciones
-                            </h4>
-                            <p class="text-gray-700 leading-relaxed text-base whitespace-pre-wrap" id="productIndications">
-                                --
-                            </p>
-                        </div>
-
+                    <div id="additionalDetailsContent" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
                         <!-- Dosis y Administración -->
                         <div id="doseSection" class="md:border-r md:border-gray-200 md:pr-6">
                             <h4 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center">
@@ -325,7 +295,7 @@
                         <!-- Principios Activos -->
                         <div id="drugsSection" class="md:pl-2">
                             <h4 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center">
-                                <i class="fas fa-flask mr-2 text-primary"></i>Composición
+                                <i class="fas fa-flask mr-2 text-primary"></i>Principios Activos
                             </h4>
                             <ul id="productDrugs" class="space-y-2 text-gray-700">
                                 <!-- Populated via JS -->

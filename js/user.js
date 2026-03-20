@@ -1,26 +1,6 @@
 // js/user.js - User Profile and Order History Logic
 
-// Wait for data.js functions to be available
-function waitForDataFunctions(callback) {
-    let attempts = 0;
-    const maxAttempts = 50;
-    
-    function check() {
-        attempts++;
-        if (typeof getCurrentUser === 'function' && typeof getCart === 'function') {
-            callback();
-        } else if (attempts < maxAttempts) {
-            setTimeout(check, 100);
-        } else {
-            console.error('Timeout waiting for data functions');
-            callback(); // Continue anyway
-        }
-    }
-    check();
-}
-
-waitForDataFunctions(function() {
-    document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Check if user is logged in
     const currentUser = await getCurrentUser();
     
@@ -265,8 +245,7 @@ waitForDataFunctions(function() {
         
         orders.forEach(order => {
             const orderEl = document.createElement('div');
-            orderEl.className = 'order-item bg-gray-50 rounded-xl p-6 border border-gray-100 transition cursor-pointer hover:border-primary hover:shadow-md';
-            orderEl.dataset.orderId = order.id;
+            orderEl.className = 'order-item bg-gray-50 rounded-xl p-6 border border-gray-100 transition cursor-pointer';
             
             const date = new Date(order.createdAt).toLocaleDateString('es-AR', {
                 year: 'numeric',
@@ -280,8 +259,7 @@ waitForDataFunctions(function() {
                 'Pendiente': 'bg-yellow-100 text-yellow-800',
                 'Confirmado': 'bg-blue-100 text-blue-800',
                 'Enviado': 'bg-purple-100 text-purple-800',
-                'Entregado': 'bg-green-100 text-green-800',
-                'Cancelado': 'bg-red-100 text-red-800'
+                'Entregado': 'bg-green-100 text-green-800'
             };
             
             const statusColor = statusColors[order.status] || 'bg-gray-100 text-gray-800';
@@ -318,99 +296,8 @@ waitForDataFunctions(function() {
                 </div>
             `;
             
-            // Add click event to show modal
-            orderEl.addEventListener('click', () => showOrderModal(order));
-            
             container.appendChild(orderEl);
         });
-    }
-    
-    // Show Order Modal
-    function showOrderModal(order) {
-        const modal = document.getElementById('orderModal');
-        if (!modal) return;
-        
-        // Set order ID and date
-        document.getElementById('orderModalId').textContent = `Pedido #${order.id}`;
-        
-        const date = new Date(order.createdAt).toLocaleDateString('es-AR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        document.getElementById('orderModalDate').textContent = date;
-        
-        // Set status
-        const statusEl = document.getElementById('orderModalStatus');
-        const statusColors = {
-            'Pendiente': 'bg-yellow-100 text-yellow-800',
-            'Confirmado': 'bg-blue-100 text-blue-800',
-            'Enviado': 'bg-purple-100 text-purple-800',
-            'Entregado': 'bg-green-100 text-green-800',
-            'Cancelado': 'bg-red-100 text-red-800'
-        };
-        statusEl.textContent = order.status;
-        statusEl.className = `inline-flex px-3 py-1 rounded-full text-xs font-bold ${statusColors[order.status] || 'bg-gray-100 text-gray-800'}`;
-        
-        // Set delivery info
-        const customerInfo = order.customerInfo || {};
-        const delivery = customerInfo.delivery || {};
-        let deliveryText = '';
-        if (delivery.method === 'pickup') {
-            deliveryText = 'Retiro en oficina (Paraguay 754)';
-        } else {
-            deliveryText = `
-                <strong>Envío a domicilio</strong><br>
-                Provincia: ${delivery.province || '-'}<br>
-                Localidad: ${delivery.locality || '-'}<br>
-                Dirección: ${delivery.address || '-'}
-            `;
-        }
-        document.getElementById('orderModalDelivery').innerHTML = deliveryText;
-        
-        // Set products
-        const productsContainer = document.getElementById('orderModalProducts');
-        productsContainer.innerHTML = '';
-        
-        order.items.forEach(item => {
-            const itemEl = document.createElement('div');
-            itemEl.className = 'flex justify-between items-center bg-gray-50 rounded-lg p-3';
-            itemEl.innerHTML = `
-                <div class="flex-1">
-                    <p class="font-medium text-gray-800">${item.title}</p>
-                    <p class="text-sm text-gray-500">${item.laboratory}</p>
-                </div>
-                <div class="text-right">
-                    <p class="font-bold text-gray-800">${item.quantity}x</p>
-                    <p class="text-sm text-gray-500">${new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(item.price * item.quantity)}</p>
-                </div>
-            `;
-            productsContainer.appendChild(itemEl);
-        });
-        
-        // Set totals
-        document.getElementById('orderModalSubtotal').textContent = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(order.subtotal || 0);
-        document.getElementById('orderModalIva').textContent = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(order.iva || 0);
-        document.getElementById('orderModalTotal').textContent = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(order.total || 0);
-        
-        // Show modal
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        
-        // Close modal handlers
-        const closeModal = () => {
-            modal.classList.add('hidden');
-            document.body.style.overflow = '';
-        };
-        
-        document.getElementById('btnCloseOrderModal').onclick = closeModal;
-        document.getElementById('btnCloseOrderModal2').onclick = closeModal;
-        
-        modal.onclick = (e) => {
-            if (e.target === modal) closeModal();
-        };
     }
 
     // Logout
@@ -426,5 +313,4 @@ waitForDataFunctions(function() {
     // Initialize
     initProfileForm();
     loadOrders();
-    });
 });

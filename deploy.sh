@@ -1,39 +1,31 @@
 #!/bin/bash
 
-# Script seguro para desplegar Camponuevo a Vercel
+# Script para desplegar cambios a GitHub automáticamente
 
-echo "Iniciando despliegue seguro..."
+echo "Iniciando despliegue..."
 
-# Verificar posibles secrets
-if grep -r "eyJ" --include="*.js" --include="*.html" --include="*.md" . 2>/dev/null; then
-    echo "ERROR: Posibles API keys detectadas."
-    echo "Revisa los archivos antes de continuar."
-    exit 1
-fi
+# Agregar todos los cambios al staging area
+git add .
 
-# Agregar solo archivos necesarios
-git add index.html catalog.html product.html order.html user.html admin.html about.html
-git add js/ components/ css/ img/ svg/ public/
-git add package.json vercel.json .gitignore 2>/dev/null || true
-
-# Verificar cambios
+# Verificar si hay cambios para commit
 if git diff --cached --quiet; then
     echo "No hay cambios para commitar."
     exit 0
 fi
 
-# Mensaje de commit
-read -p "Mensaje del commit: " commit_message
-commit_message=${commit_message:-"Update: Mejoras de seguridad"}
+# Pedir mensaje de commit al usuario
+read -p "Ingresa el mensaje del commit (o presiona Enter para usar mensaje por defecto): " commit_message
 
-echo ""
-echo "Commiteando..."
+# Si el mensaje está vacío, usar mensaje por defecto
+if [ -z "$commit_message" ]; then
+    commit_message="Update: Cambios automatizados"
+fi
+
+# Hacer commit
 git commit -m "$commit_message"
 
-echo ""
-echo "Subiendo a GitHub..."
+# Subir cambios a GitHub
 git push
 
 echo ""
-echo "Despliegue iniciado en Vercel."
-echo "Verifica: https://vercel.com/dashboard"
+echo "Despliegue completado exitosamente."

@@ -1,6 +1,4 @@
 (function () {
-    console.log('header.js loaded - starting execution');
-    
     function getCurrentPage() {
         const path = window.location.pathname.toLowerCase();
         const filename = path.split('/').pop() || 'index.html';
@@ -157,7 +155,7 @@
                     const searchText = [
                         p.title || '',
                         p.laboratory || '',
-                        p.action || p.description || '',
+                        p.description || '',
                         p.drugs || '',
                         p.subCategory || '',
                         (p.subCategories && p.subCategories.length > 0) ? p.subCategories.join(' ') : '',
@@ -220,7 +218,7 @@
                 `;
             } else {
                 searchResultItems.innerHTML = matches.map(p => `
-                    <a href="product.html?id=${p.id}" class="flex items-center gap-3 p-3 hover:bg-gray-50 transition border-b border-gray-50 last:border-0">
+                    <a href="catalog.html?search=${encodeURIComponent(query)}" class="flex items-center gap-3 p-3 hover:bg-gray-50 transition border-b border-gray-50 last:border-0">
                         <div class="w-10 h-10 flex-shrink-0 bg-white border border-gray-100 rounded-lg overflow-hidden p-1">
                             <img src="${p.image || 'https://placehold.co/100x100?text=Sin+Img'}" alt="${p.title}" class="w-full h-full object-contain">
                         </div>
@@ -331,7 +329,6 @@
     // --- Authentication Logic ---
 
     function initAuth() {
-        console.log('initAuth called');
         const userAuthContainer = document.getElementById('userAuthContainer');
         const userMenuContainer = document.getElementById('userMenuContainer');
         const authOverlay = document.getElementById('authOverlay');
@@ -494,21 +491,10 @@
         }
 
         // Event Listeners for Auth Modal
-        console.log('Setting up auth event listeners');
-        console.log('btnCloseAuth:', btnCloseAuth);
-        console.log('authOverlay:', authOverlay);
-        console.log('btnGoToRegister:', btnGoToRegister);
-        
         if (btnCloseAuth) btnCloseAuth.addEventListener('click', closeAuthModal);
         if (authOverlay) authOverlay.addEventListener('click', closeAuthModal);
         
-        if (btnGoToRegister) {
-            console.log('Adding click listener to btnGoToRegister');
-            btnGoToRegister.addEventListener('click', () => {
-                console.log('btnGoToRegister clicked - opening register modal');
-                openAuthModal('register');
-            });
-        }
+        if (btnGoToRegister) btnGoToRegister.addEventListener('click', () => openAuthModal('register'));
         if (btnGoToLogin) btnGoToLogin.addEventListener('click', () => openAuthModal('login'));
         if (btnForgotPassword) btnForgotPassword.addEventListener('click', () => openAuthModal('recovery'));
         if (btnBackToLogin) btnBackToLogin.addEventListener('click', () => openAuthModal('login'));
@@ -530,25 +516,11 @@
         if (loginForm) {
             loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
-                // Get submit button and show loading state
-                const submitBtn = loginForm.querySelector('button[type="submit"]');
-                const originalBtnText = submitBtn.innerHTML;
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Iniciando sesión...';
-                
-                // Hide any previous errors
-                document.getElementById('loginError').classList.add('hidden');
-                
                 const email = document.getElementById('loginEmail').value;
                 const password = document.getElementById('loginPassword').value;
                 const rememberMe = document.getElementById('rememberMe').checked;
                 
                 const result = await loginUser(email, password, rememberMe);
-                
-                // Reset button state
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
                 
                 if (result.success) {
                     closeAuthModal();
@@ -559,55 +531,15 @@
                     }
                 } else {
                     document.getElementById('loginError').classList.remove('hidden');
-                    
-                    // Check if it's an email not verified error - show resend button
-                    if (result.needsEmailVerification) {
-                        document.getElementById('loginErrorMessage').innerHTML = `
-                            ${result.message}
-                            <button type="button" id="btnResendVerification" class="block mt-2 text-sm text-primary hover:underline">
-                                Re-enviar correo de verificación
-                            </button>
-                        `;
-                        
-                        // Add resend verification email handler
-                        document.getElementById('btnResendVerification').addEventListener('click', async () => {
-                            const btn = document.getElementById('btnResendVerification');
-                            btn.disabled = true;
-                            btn.textContent = 'Enviando...';
-                            
-                            const resendResult = await resendVerificationEmail(email);
-                            
-                            if (resendResult.success) {
-                                btn.textContent = '¡Correo enviado! Revisa tu bandeja de entrada';
-                                btn.classList.add('text-green-600');
-                            } else {
-                                btn.textContent = 'Error al enviar. Intenta de nuevo.';
-                                btn.disabled = false;
-                            }
-                        });
-                    } else {
-                        document.getElementById('loginErrorMessage').textContent = result.message;
-                    }
+                    document.getElementById('loginErrorMessage').textContent = result.message;
                 }
             });
         }
 
         // Handle Register Form
-        console.log('Register form element:', registerForm);
         if (registerForm) {
-            console.log('Adding submit listener to register form');
             registerForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                console.log('Register form submitted - calling registerUser');
-                
-                // Get submit button and show loading state
-                const submitBtn = registerForm.querySelector('button[type="submit"]');
-                const originalBtnText = submitBtn.innerHTML;
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creando cuenta...';
-                
-                // Hide any previous errors
-                document.getElementById('registerError').classList.add('hidden');
                 
                 const name = document.getElementById('regName').value;
                 const email = document.getElementById('regEmail').value;
@@ -616,16 +548,12 @@
                 
                 // Validations
                 if (password.length < 6) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnText;
                     document.getElementById('registerError').classList.remove('hidden');
                     document.getElementById('registerErrorMessage').textContent = 'La contraseña debe tener al menos 6 caracteres.';
                     return;
                 }
                 
                 if (password !== confirmPassword) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnText;
                     document.getElementById('registerError').classList.remove('hidden');
                     document.getElementById('registerErrorMessage').textContent = 'Las contraseñas no coinciden.';
                     return;
@@ -637,20 +565,11 @@
                     password
                 });
                 
-                // Reset button state
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
-                
                 if (result.success) {
                     closeAuthModal();
-                    
-                    // Check if email confirmation is required
-                    if (result.requiresEmailVerification) {
-                        alert(result.message);
-                    } else {
-                        await updateAuthUI();
-                        alert('¡Cuenta creada exitosamente! Completa tu perfil para acceder a todas las funcionalidades.');
-                    }
+                    await updateAuthUI();
+                    // Show success message
+                    alert('¡Cuenta creada exitosamente! Completa tu perfil para acceder a todas las funcionalidades.');
                 } else {
                     document.getElementById('registerError').classList.remove('hidden');
                     document.getElementById('registerErrorMessage').textContent = result.message;
@@ -828,30 +747,11 @@
             const cartScript = document.createElement('script');
             cartScript.src = 'js/cart.js';
             cartScript.onload = function() {
-                waitForAuthFunctions();
+                document.dispatchEvent(new CustomEvent('headerLoaded'));
             };
             document.body.appendChild(cartScript);
         } else {
-            waitForAuthFunctions();
-        }
-        
-        function waitForAuthFunctions() {
-            let attempts = 0;
-            const maxAttempts = 50;
-            
-            function check() {
-                attempts++;
-                if (typeof registerUser === 'function' && typeof loginUser === 'function' && typeof getCurrentUser === 'function') {
-                    console.log('Auth functions available after', attempts, 'attempts');
-                    document.dispatchEvent(new CustomEvent('headerLoaded'));
-                } else if (attempts < maxAttempts) {
-                    setTimeout(check, 100);
-                } else {
-                    console.warn('Timeout waiting for auth functions, continuing anyway');
-                    document.dispatchEvent(new CustomEvent('headerLoaded'));
-                }
-            }
-            check();
+            document.dispatchEvent(new CustomEvent('headerLoaded'));
         }
     } else {
         console.error('SHARED_HEADER_HTML not found. Make sure components/header_content.js is loaded.');

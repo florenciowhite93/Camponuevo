@@ -8,59 +8,10 @@ function getImageUrl(image) {
     return 'https://placehold.co/40x40?text=Img';
 }
 
-// Toast notification system with undo
-let undoAction = null;
-const TOAST_DURATION = 10000;
-
-function showToast(message, action = null, undoCallback = null) {
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
-    
-    const toast = document.createElement('div');
-    toast.className = 'bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg flex items-center justify-between gap-4 min-w-[300px] animate-slide-in';
-    toast.style.animation = 'slideIn 0.3s ease-out';
-    
-    let html = `<span>${message}</span>`;
-    
-    if (action && undoCallback) {
-        undoAction = undoCallback;
-        html += `
-            <button onclick="window.undoLastAction()" class="text-blue-400 hover:text-blue-300 font-medium text-sm underline">
-                Deshacer
-            </button>
-        `;
-    }
-    
-    toast.innerHTML = html;
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease-in forwards';
-        setTimeout(() => {
-            if (toast.parentNode) toast.remove();
-            if (undoAction === undoCallback) undoAction = null;
-        }, 300);
-    }, TOAST_DURATION);
-}
-
-window.undoLastAction = function() {
-    if (undoAction) {
-        undoAction();
-        undoAction = null;
-        
-        const container = document.getElementById('toastContainer');
-        if (container) container.innerHTML = '';
-        
-        showToast('Acción deshecha');
-    }
-};
-
 document.addEventListener('DOMContentLoaded', () => {
     try {
     // Initialize categories (migrate if needed)
-    if (typeof migrateSubCategoriesToCategories === 'function') {
-        migrateSubCategoriesToCategories();
-    }
+    migrateSubCategoriesToCategories();
     
     // Elements
     const productsTableBody = document.getElementById('productsTableBody');
@@ -253,130 +204,46 @@ document.addEventListener('DOMContentLoaded', () => {
         '#6366F1'  // Indigo
     ];
 
-    // Authentication Logic usando Supabase Auth
-    async function checkAuth() {
-        if (!isSupabaseAvailable()) {
-            console.error('Supabase no disponible');
-            if (loginScreen) loginScreen.classList.remove('hidden');
-            if (adminApp) adminApp.classList.add('hidden');
-            return;
-        }
-
-        try {
-            // Verificar sesión actual
-            const { data: { session } } = await window.supabase.auth.getSession();
-            
-            if (session?.user) {
-                // Verificar si es admin
-                const isAdmin = await checkIfAdmin(session.user.id);
-                
-                if (isAdmin) {
-                    // Guardar info del admin
-                    sessionStorage.setItem('adminUserId', session.user.id);
-                    sessionStorage.setItem('isAdminLoggedIn', 'true');
-                    
-                    if (loginScreen) loginScreen.classList.add('hidden');
-                    if (adminApp) adminApp.classList.remove('hidden');
-                    initAdminPanel();
-                } else {
-                    // Es usuario pero no admin
-                    loginError.textContent = 'No tienes permisos de administrador';
-                    loginError.classList.remove('hidden');
-                    if (loginScreen) loginScreen.classList.remove('hidden');
-                    if (adminApp) adminApp.classList.add('hidden');
-                }
-            } else {
-                // No hay sesión
-                sessionStorage.removeItem('adminUserId');
-                sessionStorage.removeItem('isAdminLoggedIn');
-                if (loginScreen) loginScreen.classList.remove('hidden');
-                if (adminApp) adminApp.classList.add('hidden');
-            }
-        } catch (err) {
-            console.error('Error verificando auth:', err);
+    // Authentication Logic
+    function checkAuth() {
+        const isLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true' || 
+                          localStorage.getItem('isAdminRemembered') === 'true';
+        
+        if (isLoggedIn) {
+            if (loginScreen) loginScreen.classList.add('hidden');
+            if (adminApp) adminApp.classList.remove('hidden');
+            initAdminPanel();
+        } else {
             if (loginScreen) loginScreen.classList.remove('hidden');
             if (adminApp) adminApp.classList.add('hidden');
         }
     }
 
-    loginForm.addEventListener('submit', async (e) => {
+    loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const email = document.getElementById('loginEmail').value.trim();
-        const password = document.getElementById('loginPass').value;
+        const user = document.getElementById('loginUser').value;
+        const pass = document.getElementById('loginPass').value;
+        const rememberMe = document.getElementById('rememberMe').checked;
 
-        if (!email || !password) {
-            document.getElementById('loginErrorText').textContent = 'Por favor ingresa email y contraseña';
-            loginError.classList.remove('hidden');
-            return;
-        }
-
-        // Validar formato de email
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            document.getElementById('loginErrorText').textContent = 'Por favor ingresa un email válido';
-            loginError.classList.remove('hidden');
-            return;
-        }
-
-        loginError.classList.add('hidden');
-        
-        // Mostrar loading
-        const submitBtn = document.getElementById('btnLogin');
-        const btnLoginText = document.getElementById('btnLoginText');
-        submitBtn.disabled = true;
-        btnLoginText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Verificando...';
-
-        try {
-            const result = await loginUser(email, password);
-
-            if (result.success) {
-                if (result.isAdmin) {
-                    // Es admin, mostrar panel
-                    checkAuth();
-                } else {
-                    // Es usuario pero no admin
-                    document.getElementById('loginErrorText').textContent = 'No tienes permisos de administrador';
-                    loginError.classList.remove('hidden');
-                    await logoutUser();
-                }
-            } else {
-                document.getElementById('loginErrorText').textContent = result.error || 'Credenciales incorrectas';
-                loginError.classList.remove('hidden');
-                document.getElementById('loginPass').value = '';
+        // Hardcoded credentials for simulation (as requested)
+        if (user === 'admin' && pass === '1234') {
+            sessionStorage.setItem('isAdminLoggedIn', 'true');
+            if (rememberMe) {
+                localStorage.setItem('isAdminRemembered', 'true');
             }
-        } catch (err) {
-            console.error('Error en login:', err);
-            document.getElementById('loginErrorText').textContent = 'Error de conexión. Intenta de nuevo.';
+            loginError.classList.add('hidden');
+            checkAuth();
+        } else {
             loginError.classList.remove('hidden');
-        } finally {
-            submitBtn.disabled = false;
-            btnLoginText.textContent = 'Ingresar al Panel';
+            document.getElementById('loginPass').value = ''; // clear password
         }
     });
 
-    // Listener para cambios en autenticación
-    if (isSupabaseAvailable()) {
-        window.supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth state changed:', event);
-            if (event === 'SIGNED_OUT') {
-                sessionStorage.removeItem('adminUserId');
-                sessionStorage.removeItem('isAdminLoggedIn');
-            }
-        });
-    }
-
     if (btnLogout) {
-        btnLogout.addEventListener('click', async () => {
-            btnLogout.disabled = true;
-            btnLogout.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>';
-            
-            await logoutUser();
-            
-            sessionStorage.removeItem('adminUserId');
+        btnLogout.addEventListener('click', () => {
             sessionStorage.removeItem('isAdminLoggedIn');
             localStorage.removeItem('isAdminRemembered');
-            
-            window.location.reload();
+            window.location.reload(); // Reload to reset state and show login
         });
     }
 
@@ -393,16 +260,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = async (event) => {
+            reader.onload = (event) => {
                 const text = event.target.result;
-                await handleCSVImport(text);
+                handleCSVImport(text);
                 csvImportInput.value = ''; // Reset input
             };
             reader.readAsText(file);
         });
     }
 
-    async function handleCSVImport(csvText) {
+    function handleCSVImport(csvText) {
         try {
             const lines = csvText.split('\n');
             const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
@@ -443,71 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (importedProducts.length > 0) {
                 if (confirm(`Se han detectado ${importedProducts.length} productos en el CSV. ¿Deseas reemplazar el catálogo actual?`)) {
-                    // Save products to localStorage
-                    productsCache = importedProducts;
+                    // Save products
                     localStorage.setItem('camponuevo_products', JSON.stringify(importedProducts));
-                    console.log('Products saved to localStorage:', importedProducts.length);
-                    
-                    // Save products to Supabase
-                    console.log('isSupabaseAvailable:', isSupabaseAvailable());
-                    console.log('window.supabase:', window.supabase);
-                    
-                    if (isSupabaseAvailable()) {
-                        try {
-                            console.log('Starting Supabase import...');
-                            
-                            // Delete existing products in Supabase
-                            await window.supabase.from('products').delete().neq('id', '');
-                            console.log('Deleted existing products from Supabase');
-                            
-                            // Map products to Supabase format
-                            const supabaseProducts = importedProducts.map(p => {
-                                // Helper to convert string or array to proper array
-                                const toArray = (val) => {
-                                    if (Array.isArray(val)) return val;
-                                    if (!val) return [];
-                                    if (typeof val === 'string') {
-                                        // Split by semicolon and filter empty
-                                        return val.split(';').map(s => s.trim()).filter(s => s.length > 0);
-                                    }
-                                    return [];
-                                };
-                                
-                                return {
-                                    id: p.id,
-                                    title: p.title || '',
-                                    price: p.price || 0,
-                                    laboratory: p.laboratory || '',
-                                    action: p.action || p.description || '',
-                                    indications: p.indications || '',
-                                    subcategory: p.subCategory || p.subcategory || '',
-                                    subcategories: toArray(p.subCategories || p.subcategories),
-                                    animalbreeds: toArray(p.animalBreeds || p.animalbreeds),
-                                    volume: p.volumeWeight || p.volume || '',
-                                    image: p.image || '',
-                                    drugs: toArray(p.drugs),
-                                    dose: p.dose || '',
-                                    externallink: p.externalLink || p.externallink || ''
-                                };
-                            });
-                            
-                            console.log('Inserting to Supabase:', supabaseProducts.length, 'products');
-                            
-                            const { data, error } = await window.supabase.from('products').insert(supabaseProducts);
-                            
-                            if (error) {
-                                console.error('Supabase insert error:', error);
-                                alert('Error al guardar en Supabase: ' + error.message);
-                            } else {
-                                console.log('Products saved to Supabase successfully:', supabaseProducts.length);
-                            }
-                        } catch (err) {
-                            console.error('Error saving to Supabase:', err);
-                            alert('Error al guardar en Supabase: ' + err.message);
-                        }
-                    } else {
-                        console.log('Supabase not available, skipping...');
-                    }
                     
                     // Extract and save unique laboratories from imported products
                     const labsSet = new Set();
@@ -668,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Tab Management ---
-    async function switchTab(tab) {
+    function switchTab(tab) {
         const tabs = [
             { id: 'products', btn: tabProducts, view: viewProducts, nav: navProducts },
             { id: 'clients', btn: tabClients, view: viewClients, nav: navClients },
@@ -703,11 +507,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (tab === 'products') renderProducts();
-        if (tab === 'clients') loadAndRenderClients();
+        if (tab === 'clients') renderClients();
         if (tab === 'orders') renderOrders();
         if (tab === 'cats') renderCategories();
         if (tab === 'subCats') renderSubCategories();
-        if (tab === 'homeCats') await renderHomeCategories();
+        if (tab === 'homeCats') renderHomeCategories();
         if (tab === 'labs') renderLaboratories();
         if (tab === 'labels') renderLabels();
     }
@@ -751,12 +555,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Category UI Management ---
-    async function renderCategories() {
+    function renderCategories() {
         if (!catsContainer) return;
-        if (typeof migrateSubCategoriesToCategories === 'function') {
-            migrateSubCategoriesToCategories();
-        }
-        const categories = await getCategories();
+        migrateSubCategoriesToCategories();
+        const categories = getCategories();
         catsContainer.innerHTML = '';
         
         if (categories.length === 0) {
@@ -800,24 +602,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    window.handleDeleteCat = async function(id) {
+    window.handleDeleteCat = function(id) {
         if (confirm('¿Estás seguro de eliminar esta categoría? Las subcategorías no se eliminarán.')) {
-            await deleteCategory(id);
+            deleteCategory(id);
             renderCategories();
         }
     }
 
-    window.removeSubCatFromCategory = async function(categoryId, subCatName) {
-        await removeSubCategoryFromCategory(categoryId, subCatName);
+    window.removeSubCatFromCategory = function(categoryId, subCatName) {
+        removeSubCategoryFromCategory(categoryId, subCatName);
         renderCategories();
     }
 
-    window.openEditCatModal = async function(categoryId) {
-        const cat = await getCategoryById(categoryId);
+    window.openEditCatModal = function(categoryId) {
+        const cat = getCategoryById(categoryId);
         if (!cat) return;
         
         const allSubCats = getSubCategories();
-        const assignedSubCats = cat.subCategories || [];
+        const assignedSubCats = cat.subCategories;
         const availableSubCats = allSubCats.filter(s => !assignedSubCats.includes(s));
         
         let modalHtml = `
@@ -864,31 +666,31 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
 
-    window.renderEditCatModal = async function(categoryId) {
+    window.renderEditCatModal = function(categoryId) {
         const modal = document.getElementById('editCatModal');
         if (modal) modal.remove();
-        await openEditCatModal(categoryId);
+        openEditCatModal(categoryId);
     }
 
-    window.addSubCatToCategoryFromModal = async function(categoryId, subCatName) {
+    window.addSubCatToCategoryFromModal = function(categoryId, subCatName) {
         if (!subCatName) return;
-        await addSubCategoryToCategory(categoryId, subCatName);
-        await renderEditCatModal(categoryId);
+        addSubCategoryToCategory(categoryId, subCatName);
+        renderEditCatModal(categoryId);
     }
 
-    window.openEditCatNameModal = async function(categoryId, currentName) {
+    window.openEditCatNameModal = function(categoryId, currentName) {
         const newName = prompt('Nuevo nombre de la categoría:', currentName);
         if (newName && newName.trim() && newName !== currentName) {
-            await updateCategoryName(categoryId, newName.trim());
+            updateCategoryName(categoryId, newName.trim());
             renderCategories();
         }
     }
 
     if (btnAddCat) {
-        btnAddCat.addEventListener('click', async () => {
+        btnAddCat.addEventListener('click', () => {
             const name = newCatInput.value.trim();
             if (name) {
-                const result = await addCategory(name);
+                const result = addCategory(name);
                 if (result.success) {
                     newCatInput.value = '';
                     renderCategories();
@@ -908,7 +710,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Sub-category UI Management ---
-    async function renderSubCategories() {
+    function renderSubCategories() {
         if (!subCatsContainer) return;
         const cats = getSubCategories();
         subCatsContainer.innerHTML = '';
@@ -933,7 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Laboratory UI Management ---
-    async function renderLaboratories() {
+    function renderLaboratories() {
         if (!labsContainer) return;
         const labs = getLaboratories();
         labsContainer.innerHTML = '';
@@ -958,7 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Label UI Management ---
-    async function renderLabels() {
+    function renderLabels() {
         if (!labelsContainer) return;
         const labelsData = typeof getLabels === 'function' ? getLabels() : [];
         labelsContainer.innerHTML = '';
@@ -989,18 +791,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Home Categories UI Management ---
-    async function renderHomeCategories() {
+    function renderHomeCategories() {
         const homeCatsContainer = document.getElementById('homeCatsContainer');
         const allCatsContainer = document.getElementById('allCatsContainer');
         const homeCatSelector = document.getElementById('homeCatSelector');
         
         if (!homeCatsContainer || !allCatsContainer || !homeCatSelector) return;
         
-        const allCats = await getCategories();
-        const homeCatData = await getHomeCategories();
-        
-        console.log('renderHomeCategories - allCats:', allCats);
-        console.log('renderHomeCategories - homeCatData:', homeCatData);
+        const allCats = getCategories();
+        const homeCatData = getHomeCategories();
         
         const categoryIcons = {
             'veterinaria': 'fa-vial',
@@ -1049,16 +848,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${cat.svg ? `<button class="text-gray-400 hover:text-red-500 p-1" onclick="removeCategorySvg('${cat.id}')" title="Quitar SVG">
                         <i class="fas fa-trash-alt text-sm"></i>
                     </button>` : ''}
-                    <button class="text-gray-400 hover:text-red-500 p-1" title="Quitar del inicio" data-remove-home="${cat.id}">
+                    <button class="text-gray-400 hover:text-red-500 p-1" title="Quitar del inicio">
                         <i class="fas fa-times text-sm"></i>
                     </button>
                 </div>
             `;
             
-            div.querySelector('[data-remove-home]').onclick = async function() {
-                const catId = this.getAttribute('data-remove-home');
-                console.log('Remove button clicked for:', catId);
-                await removeCategoryFromHome(catId);
+            div.querySelector('button').onclick = () => {
+                removeCategoryFromHome(cat.id);
                 renderHomeCategories();
             };
             
@@ -1106,11 +903,11 @@ document.addEventListener('DOMContentLoaded', () => {
         initDragAndDrop();
     }
     
-    window.handleSvgUpload = async function(categoryId, input) {
+    window.handleSvgUpload = function(categoryId, input) {
         const file = input.files[0];
         if (file && file.type === 'image/svg+xml') {
             const reader = new FileReader();
-            reader.onload = async function(e) {
+            reader.onload = function(e) {
                 const svgContent = e.target.result;
                 // Extraer solo el contenido SVG sin el wrapper
                 const parser = new DOMParser();
@@ -1126,7 +923,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     svgElement.style.color = '#2d5a27';
                     
                     const sanitizedSvg = svgElement.outerHTML;
-                    await updateCategorySvg(categoryId, sanitizedSvg);
+                    updateCategorySvg(categoryId, sanitizedSvg);
                     renderHomeCategories();
                 }
             };
@@ -1214,10 +1011,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (btnAddLab) {
-        btnAddLab.addEventListener('click', async () => {
+        btnAddLab.addEventListener('click', () => {
             const name = newLabInput.value.trim();
             if (name) {
-                await saveLaboratory(name);
+                saveLaboratory(name);
                 newLabInput.value = '';
                 renderLaboratories();
                 initFilters(getProducts());
@@ -1225,24 +1022,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    window.handleDeleteLab = async function(name) {
+    window.handleDeleteLab = function(name) {
         if (confirm(`¿Estás seguro de eliminar el laboratorio "${name}"?`)) {
-            await deleteLaboratory(name);
-            await renderLaboratories();
+            deleteLaboratory(name);
+            renderLaboratories();
             initFilters(getProducts());
         }
     };
 
     // Expose delete handler globally for onclick
-    window.handleDeleteSubCat = async function(name) {
+    window.handleDeleteSubCat = function(name) {
         if (confirm(`¿Estás seguro de eliminar la sub-categoría "${name}"?`)) {
             deleteSubCategory(name);
-            await renderSubCategories();
+            renderSubCategories();
             initFilters(getProducts()); // Refresh dropdowns
         }
     };
 
-    window.handleDeleteLabel = async function(name) {
+    window.handleDeleteLabel = function(name) {
         if (confirm(`¿Estás seguro de eliminar la etiqueta "${name}"?`)) {
             if (typeof deleteLabel === 'function') deleteLabel(name);
             renderLabels();
@@ -1368,7 +1165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Edit Sub-Category Name Modal ---
-    window.openEditSubCatNameModal = async function(subCatName) {
+    window.openEditSubCatNameModal = function(subCatName) {
         currentEditingSubCat = subCatName;
         editSubCatNameInput.value = subCatName;
         editSubCatNameModal.classList.remove('hidden');
@@ -1422,7 +1219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editLabNameModal = document.getElementById('editLabNameModal');
     const editLabNameInput = document.getElementById('editLabNameInput');
 
-    window.openEditLabNameModal = async function(labName) {
+    window.openEditLabNameModal = function(labName) {
         currentEditingLabName = labName;
         editLabNameInput.value = labName;
         editLabNameModal.classList.remove('hidden');
@@ -1469,7 +1266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editLabelColorValue = document.getElementById('editLabelColorValue');
     const editLabelColorPalette = document.getElementById('editLabelColorPalette');
 
-    window.openEditLabelNameModal = async function(labelName, labelColor) {
+    window.openEditLabelNameModal = function(labelName, labelColor) {
         currentEditingLabelName = labelName;
         currentEditingLabelColor = labelColor;
         editLabelNameInput.value = labelName;
@@ -1970,45 +1767,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initAdminPanel() {
-        // Load products from Supabase first
-        getProductsAsync().then(() => {
-            selectedProductIds.clear();
-            updateBulkToolbarVisibility();
-            switchTab('products');
-            renderProducts();
-            initFilters(getProducts());
-            renderSubCategories();
-            renderLaboratories();
-            renderLabels();
-            initColorPalette();
-        });
+        selectedProductIds.clear();
+        updateBulkToolbarVisibility();
+        switchTab('products');
+        renderProducts();
+        initFilters(getProducts());
+        renderSubCategories();
+        renderLaboratories();
+        renderLabels();
+        initColorPalette();
     }
 
     // --- Client Management ---
     let currentEditingClientId = null;
-    let allOrdersCache = null;
 
-    // Load clients from Supabase and render
-    async function loadAndRenderClients(searchTerm = '') {
+    function renderClients(searchTerm = '') {
         if (!clientsContainer) return;
-        
-        // Load users from Supabase if available
-        if (typeof loadUsersFromSupabaseInBackground === 'function') {
-            await loadUsersFromSupabaseInBackground();
-        }
-        
-        // Load all orders from Supabase if available
-        if (!allOrdersCache && typeof getAllOrdersFromSupabase === 'function') {
-            allOrdersCache = await getAllOrdersFromSupabase();
-            console.log('Orders loaded from Supabase for admin:', allOrdersCache.length);
-        }
         
         let clients = typeof getUsers === 'function' ? getUsers() : [];
         
         if (searchTerm) {
             clients = clients.filter(c => 
-                (c.name && c.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (c.phone && c.phone.includes(searchTerm))
             );
         }
@@ -2021,12 +1802,9 @@ document.addEventListener('DOMContentLoaded', () => {
             clientsEmptyState.classList.add('hidden');
             
             clientsContainer.innerHTML = clients.map(client => {
-                // Get orders for this client
-                const orders = allOrdersCache ? allOrdersCache.filter(o => o.userId === client.id) : [];
-                const localOrders = typeof getOrdersByUser === 'function' ? getOrdersByUser(client.id) : [];
-                const allClientOrders = [...orders, ...localOrders.filter(lo => !orders.find(o => o.id === lo.id))];
-                const orderCount = allClientOrders.length;
-                const totalSpent = allClientOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+                const orders = typeof getOrdersByUser === 'function' ? getOrdersByUser(client.id) : [];
+                const orderCount = orders.length;
+                const totalSpent = orders.reduce((sum, o) => sum + (o.total || 0), 0);
                 
                 return `
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition cursor-pointer" onclick="openClientModal('${client.id}')">
@@ -2049,13 +1827,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    window.openClientModal = async function(clientId) {
-        // Ensure orders are loaded
-        if (!allOrdersCache && typeof getAllOrdersFromSupabase === 'function') {
-            allOrdersCache = await getAllOrdersFromSupabase();
-        }
-        
-        const clients = typeof getUsers === 'function' ? getUsers() : [];
+    window.openClientModal = function(clientId) {
+        const clients = getUsers();
         const client = clients.find(c => c.id === clientId);
         
         if (!client) return;
@@ -2069,14 +1842,11 @@ document.addEventListener('DOMContentLoaded', () => {
         clientLocationInput.value = client.location || '';
         clientIdentificationInput.value = client.identification || '';
         
-        // Get orders for this client (from cache + local)
-        const orders = allOrdersCache ? allOrdersCache.filter(o => o.userId === client.id) : [];
-        const localOrders = typeof getOrdersByUser === 'function' ? getOrdersByUser(client.id) : [];
-        const allClientOrders = [...orders, ...localOrders.filter(lo => !orders.find(o => o.id === lo.id))];
-        
-        if (allClientOrders.length > 0) {
+        // Show orders
+        const orders = getOrdersByUser(client.id);
+        if (orders.length > 0) {
             clientOrdersSection.classList.remove('hidden');
-            clientOrdersList.innerHTML = allClientOrders.map(order => `
+            clientOrdersList.innerHTML = orders.map(order => `
                 <div class="bg-gray-50 p-2 rounded-lg flex justify-between items-center text-sm hover:bg-gray-100 cursor-pointer transition" onclick="viewOrderDetail('${order.id}')">
                     <div>
                         <span class="font-medium text-primary">#${order.id ? order.id.substring(0, 8) : ''}</span>
@@ -2168,16 +1938,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         clientModal.classList.add('hidden');
-        loadAndRenderClients(clientSearch ? clientSearch.value : '');
+        renderClients(clientSearch ? clientSearch.value : '');
     }
 
     function deleteClient() {
         if (currentEditingClientId && confirm('¿Está seguro de eliminar este cliente?')) {
-            let clients = typeof getUsers === 'function' ? getUsers() : [];
+            let clients = getUsers();
             clients = clients.filter(c => c.id !== currentEditingClientId);
-            if (typeof saveUsers === 'function') saveUsers(clients);
+            saveUsers(clients);
             clientModal.classList.add('hidden');
-            loadAndRenderClients(clientSearch ? clientSearch.value : '');
+            renderClients(clientSearch ? clientSearch.value : '');
         }
     }
 
@@ -2203,7 +1973,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     if (clientSearch) {
-        clientSearch.addEventListener('input', (e) => loadAndRenderClients(e.target.value));
+        clientSearch.addEventListener('input', (e) => renderClients(e.target.value));
     }
 
     // --- Sub-Category Picker Logic (Modal) ---
@@ -2291,17 +2061,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (btnAddNewSubCatInline) {
-        btnAddNewSubCatInline.addEventListener('click', async () => {
+        btnAddNewSubCatInline.addEventListener('click', () => {
             const name = subCatSearch.value.trim();
             if (name) {
-                await saveSubCategory(name); // Save to global list and Supabase
+                saveSubCategory(name); // Save to global list
                 selectedSubCategories.push(name); // Add to current product
                 renderSubCatPills();
                 subCatSearch.value = '';
                 btnAddNewSubCatInline.classList.add('hidden');
                 subCatDropdown.classList.add('hidden');
                 renderSubCategories(); // Refresh the management list if it's open
-                initFilters(getProducts()); // Refresh filter dropdowns
             }
         });
     }
@@ -2420,8 +2189,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Load and render products (with filtering)
-    async function renderProducts() {
-        let products = productsCache || [];
+    function renderProducts() {
+        let products = getProducts();
         
         console.log('renderProducts called, total products:', products.length);
         
@@ -2437,7 +2206,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             products = products.filter(product => {
                 const matchSearch = product.title.toLowerCase().includes(searchTerm) || 
-                                    (product.action || '').toLowerCase().includes(searchTerm);
+                                    (product.description || '').toLowerCase().includes(searchTerm);
                 
                 // Normalize lab comparison for case-insensitivity
                 const productLab = product.laboratory ? product.laboratory.trim() : '';
@@ -2615,9 +2384,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('price').value = product.price;
         document.getElementById('volumeWeight').value = product.volumeWeight;
         document.getElementById('drugs').value = product.drugs;
-        document.getElementById('action').value = product.action || '';
+        document.getElementById('description').value = product.description;
         document.getElementById('dose').value = product.dose;
-        document.getElementById('indications').value = product.indications || '';
         document.getElementById('externalLink').value = product.externalLink || '';
 
         // Handle Image population
@@ -2682,26 +2450,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.promptDelete = function(id) {
-        const products = getProducts();
-        const productToDelete = products.find(p => p.id === id);
-        
-        if (!productToDelete) {
-            showToast('Producto no encontrado');
-            return;
-        }
-        
-        if (confirm('¿Estás seguro de que deseas eliminar este producto?')) {
+        if (confirm('¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.')) {
             deleteProduct(id);
             renderProducts();
-            
-            showToast(
-                'Producto eliminado',
-                'Deshacer',
-                () => {
-                    saveProduct(productToDelete);
-                    renderProducts();
-                }
-            );
         }
     };
 
@@ -2755,7 +2506,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add to laboratories list if not exists
             const labs = getLaboratories();
             if (!labs.includes(laboratorio)) {
-                await saveLaboratory(laboratorio);
+                saveLaboratory(laboratorio);
             }
         } else if (selectedLaboratory) {
             laboratorio = selectedLaboratory;
@@ -2821,12 +2572,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Create product object
         const finalProductId = document.getElementById('productId').value || generateId();
-        
-        function toSentenceCase(text) {
-            if (!text) return '';
-            return text.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g, c => c.toUpperCase());
-        }
-        
         const product = {
             id: finalProductId,
             title: document.getElementById('title').value,
@@ -2834,9 +2579,8 @@ document.addEventListener('DOMContentLoaded', () => {
             price: parseFloat(document.getElementById('price').value),
             volumeWeight: document.getElementById('volumeWeight').value,
             drugs: document.getElementById('drugs').value,
-            action: toSentenceCase(document.getElementById('action').value),
-            indications: toSentenceCase(document.getElementById('indications').value),
-            dose: toSentenceCase(document.getElementById('dose').value),
+            description: document.getElementById('description').value,
+            dose: document.getElementById('dose').value,
             image: finalImage,
             externalLink: document.getElementById('externalLink').value,
             animalBreeds: breeds,
@@ -2849,17 +2593,16 @@ document.addEventListener('DOMContentLoaded', () => {
         renderProducts();
     });
     }
-    
-    // Close on click outside modal content - DISABLED
-    // The modal should only close via X button, Save, or Cancel
-    // if (productModal) {
-    //     productModal.addEventListener('click', (e) => {
-    //         if (e.target === productModal) {
-    //             closeModal();
-    //         }
-    //     });
-    // }
-    
+
+    // Close on click outside modal content
+    if (productModal) {
+        productModal.addEventListener('click', (e) => {
+            if (e.target === productModal) {
+                closeModal();
+            }
+        });
+    }
+
     // Add filter event listeners
     console.log('adminSearch exists:', !!adminSearch);
     console.log('adminLabFilter exists:', !!adminLabFilter);
@@ -3464,7 +3207,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Confirm delete
     if (btnConfirmBulkDelete) {
-        btnConfirmBulkDelete.addEventListener('click', async () => {
+        btnConfirmBulkDelete.addEventListener('click', () => {
             const confirmText = bulkDeleteConfirmInput.value.trim().toUpperCase();
             if (confirmText !== 'ELIMINAR') {
                 alert('Por favor escribe ELIMINAR para confirmar.');
@@ -3472,38 +3215,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const productsToDelete = Array.from(selectedProductIds);
-            const allProducts = productsCache || [];
-            const deletedProducts = allProducts.filter(p => productsToDelete.includes(p.id));
+            const allProducts = getProducts();
             const remainingProducts = allProducts.filter(p => !productsToDelete.includes(p.id));
             
-            // Save deleted products for undo
-            const deletedProductsCopy = JSON.parse(JSON.stringify(deletedProducts));
+            saveAllProducts(remainingProducts);
             
-            // Update local storage
-            productsCache = remainingProducts;
-            localStorage.setItem('camponuevo_products', JSON.stringify(remainingProducts));
-            
-            // Delete from Supabase
-            for (const id of productsToDelete) {
-                await deleteProductFromSupabase(id);
-            }
-            
-            showToast(
-                `¡Se han eliminado ${productsToDelete.length} productos exitosamente!`,
-                'Deshacer',
-                () => {
-                    // Restore deleted products
-                    const restoredProducts = [...productsCache, ...deletedProductsCopy];
-                    productsCache = restoredProducts;
-                    localStorage.setItem('camponuevo_products', JSON.stringify(restoredProducts));
-                    
-                    // Restore in Supabase
-                    restoredProducts.forEach(p => saveProduct(p));
-                    
-                    renderProducts();
-                }
-            );
-            
+            alert(`¡Se han eliminado ${productsToDelete.length} productos exitosamente!`);
             bulkDeleteModal.classList.add('hidden');
             
             selectedProductIds.clear();

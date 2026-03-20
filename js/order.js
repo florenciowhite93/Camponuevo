@@ -1,31 +1,6 @@
 // js/order.js
 
-// Helper to check if Supabase is available
-function checkSupabaseAvailable() {
-    return typeof isSupabaseAvailable === 'function' && isSupabaseAvailable();
-}
-
-// Wait for cart functions to be available
-function waitForCartFunctions(callback) {
-    let attempts = 0;
-    const maxAttempts = 50;
-    
-    function check() {
-        attempts++;
-        if (typeof getCart === 'function' && typeof clearCart === 'function') {
-            callback();
-        } else if (attempts < maxAttempts) {
-            setTimeout(check, 100);
-        } else {
-            console.error('Timeout waiting for cart functions');
-            callback(); // Continue anyway
-        }
-    }
-    check();
-}
-
-waitForCartFunctions(function() {
-    document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     const orderItemsContainer = document.getElementById('orderItemsContainer');
     const orderTotal = document.getElementById('orderTotal');
     const orderCount = document.getElementById('orderCount');
@@ -150,7 +125,7 @@ waitForCartFunctions(function() {
     });
 
     // Form submission
-    orderForm.addEventListener('submit', async (e) => {
+    orderForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const cart = getCart();
         if (cart.length === 0) {
@@ -201,64 +176,69 @@ waitForCartFunctions(function() {
             customerInfo: customerInfo
         };
 
-        // Save order
-        await saveOrder(orderData);
-        
-        // Update user profile with the contact info used in this order (saves to Supabase)
+        // Save order to localStorage if user is logged in
         if (currentUser) {
-            const profileResult = await updateUserProfile(currentUser.id, {
+            saveOrder(orderData);
+            
+            // Update user profile with the contact info used in this order
+            updateUserProfile(currentUser.id, {
                 name: customerInfo.name,
                 phone: customerInfo.phone,
-                identification: customerInfo.identification,
-                address: customerInfo.delivery?.address || '',
-                location: customerInfo.delivery?.locality || ''
-            });
-            
-            if (profileResult.success) {
-                console.log('User profile updated with order contact info');
-            }
-        } else if (customerInfo.email) {
-            // If not logged in but has email, try to find and update user by email in Supabase
-            if (checkSupabaseAvailable()) {
-                try {
-                    const { data: users } = await window.supabase
-                        .from('users')
-                        .select('id')
-                        .eq('email', customerInfo.email.toLowerCase());
-                    
-                    if (users && users.length > 0) {
-                        await window.supabase
-                            .from('users')
-                            .upsert({
-                                id: users[0].id,
-                                name: customerInfo.name,
-                                phone: customerInfo.phone,
-                                identification: customerInfo.identification || '',
-                                address: customerInfo.delivery?.address || '',
-                                location: customerInfo.delivery?.locality || ''
-                            });
-                        console.log('Guest user profile updated');
-                    }
-                } catch (err) {
-                    console.warn('Could not update guest profile:', err.message);
+                identification: customerInfo.identification
+            }).then(result => {
+                if (result.success) {
+                    console.log('User profile updated with order contact info');
                 }
-            }
+            });
         }
 
-        // Store order data for confirmation page
-        sessionStorage.setItem('lastOrder', JSON.stringify(orderData));
+        const orderDate = new Date().toLocaleString('es-AR');
         
-        // Clear cart
-        clearCart();
-        renderOrderItems();
-        if (typeof updateHeaderCartCount === 'function') updateHeaderCartCount();
+        // Format WhatsApp message
+        let message = `*Nuevo Pedido - Camponuevo*\n\n`;
+        message += `*Número de Pedido:* ${orderData.id}\n`;
+        message += `*Fecha:* ${orderDate}\n`;
+        message += `*Cliente:* ${customerInfo.name}\n`;
+        message += `*Tel:* ${customerInfo.phone}\n`;
+        message += `*Email:* ${customerInfo.email}\n`;
+        if (customerInfo.identification) message += `*CUIT/DNI:* ${customerInfo.identification}\n`;
         
-        // Redirect to confirmation page instead of WhatsApp
-        window.location.href = 'order-confirmation.html';
+        // Add delivery info
+        message += `\n*Método de Entrega:*\n`;
+        if (customerInfo.delivery.method === 'pickup') {
+            message += `Retiro en oficina (Paraguay 754)\n`;
+        } else {
+            message += `Envío a domicilio\n`;
+            message += `*Provincia:* ${customerInfo.delivery.province}\n`;
+            message += `*Localidad:* ${customerInfo.delivery.locality}\n`;
+            if (customerInfo.delivery.address) message += `*Dirección:* ${customerInfo.delivery.address}\n`;
+        }
+        
+        message += `\n*Detalle del Pedido:*\n`;
+        
+        orderData.items.forEach(item => {
+            message += `- ${item.quantity}x ${item.title} (${item.laboratory})\n`;
+        });
+        
+        message += `\n*Subtotal:* ${new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(orderData.subtotal)}`;
+        message += `\n*IVA (21%):* ${new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(orderData.iva)}`;
+        message += `\n*Total:* ${new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(orderData.total)}`;
+        message += `\n\n_Aguardo su confirmación para coordinar el pago y envío._`;
+
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/5491144096789?text=${encodedMessage}`;
+        
+        window.open(whatsappUrl, '_blank');
+        
+        // Clear cart after sending order
+        setTimeout(() => {
+            clearCart();
+            renderOrderItems();
+            if (typeof updateHeaderCartCount === 'function') updateHeaderCartCount();
+        }, 1000);
     });
 
     // Initialize
     renderOrderItems();
     (async () => await prefillForm())();
-    });
 });

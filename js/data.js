@@ -9,19 +9,9 @@
         script.onload = function() {
             window.supabase = window.supabase.createClient(
                 'https://itlczokcdxgzgqrortpm.supabase.co',
-                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0bGN6b2tjZHhnemdxcm9ydHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MDk1MzcsImV4cCI6MjA4OTE4NTUzN30.4j9YbZbeiOJQ6xnoyVjdW8xlv8qsrZnqgmJ3E6jkdCg',
-                {
-                    auth: {
-                        // URL de verificación de email (página estática)
-                        emailRedirectTo: window.location.origin + '/verify-email.html'
-                    }
-                }
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0bGN6b2tjZHhnemdxcm9ydHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0OTcwMDAsImV4cCI6MjA2MTA3MzAwMH0.K4AXxMHVd0VqeFR9gUGMSyq-zVYHj4pH1vsH5KGTFqc'
             );
             console.log('Supabase client initialized from data.js');
-            window.supabaseReady = true;
-        };
-        script.onerror = function() {
-            console.error('Failed to load Supabase client');
         };
         document.head.appendChild(script);
     }
@@ -33,21 +23,6 @@ window.USE_SUPABASE = true;
 // Función para verificar si Supabase está disponible
 function isSupabaseAvailable() {
     return window.USE_SUPABASE === true && window.supabase && typeof window.supabase.from === 'function';
-}
-
-function addAutoLabel(product) {
-    if (!product.created_at) return product;
-    const createdDate = new Date(product.created_at);
-    const now = new Date();
-    const daysDiff = (now - createdDate) / (1000 * 60 * 60 * 24);
-    
-    if (daysDiff <= 30) {
-        if (!product.labels) product.labels = [];
-        if (!product.labels.includes('Nuevo')) {
-            product.labels = ['Nuevo', ...product.labels];
-        }
-    }
-    return product;
 }
 
 // ============ PRODUCTOS ============
@@ -72,8 +47,7 @@ async function saveProductsToSupabase(products) {
             description: p.description, subcategory: p.subCategory,
             subcategories: p.subCategories || [], animalbreeds: p.animalBreeds || [],
             volume: p.volumeWeight, image: p.image, drugs: p.drugs || [],
-            dose: p.dose, externallink: p.externalLink, created_at: new Date().toISOString(),
-            labels: p.labels || []
+            dose: p.dose, externallink: p.externalLink, created_at: new Date().toISOString()
         })));
         if (error) throw error;
         console.log('Products saved to Supabase');
@@ -98,18 +72,13 @@ async function getCategoriesFromSupabase() {
 }
 
 async function saveCategoriesToSupabase(categories) {
-    if (!isSupabaseAvailable()) {
-        console.log('Supabase not available, skipping categories save');
-        return false;
-    }
+    if (!isSupabaseAvailable()) return false;
     try {
-        console.log('Saving categories to Supabase:', categories.length);
         await window.supabase.from('categories').delete().neq('id', '');
         const { error } = await window.supabase.from('categories').insert(
             categories.map(c => ({ id: c.id, name: c.name, subcategories: c.subCategories || [], svg: c.svg }))
         );
         if (error) throw error;
-        console.log('Categories saved to Supabase successfully');
         return true;
     } catch (err) {
         console.error('Error saving categories to Supabase:', err.message);
@@ -173,21 +142,13 @@ async function getHomeCategoriesFromSupabase() {
 async function saveHomeCategoriesToSupabase(homeCategories) {
     if (!isSupabaseAvailable()) return false;
     try {
-        console.log('Saving home categories to Supabase:', homeCategories);
         await window.supabase.from('home_categories').delete().neq('id', '');
         const { error } = await window.supabase.from('home_categories').insert(
-            homeCategories.map((hc, index) => ({ 
-                id: hc.id, 
-                categoryid: hc.id, 
-                position: index,
-                svg: hc.svg || null
-            }))
+            homeCategories.map((hc, index) => ({ id: hc.id, categoryid: hc.categoryId, position: index }))
         );
         if (error) throw error;
-        console.log('Home categories saved to Supabase');
         return true;
     } catch (err) {
-        console.error('Error saving home categories to Supabase:', err);
         return false;
     }
 }
@@ -208,24 +169,12 @@ async function saveOrderToSupabase(order) {
     if (!isSupabaseAvailable()) return false;
     try {
         const { error } = await window.supabase.from('orders').insert({
-            id: order.id, 
-            userid: order.userId, 
-            products: JSON.stringify(order.items),
-            customer_info: JSON.stringify(order.customerInfo),
-            subtotal: order.subtotal,
-            iva: order.iva,
-            total: order.total, 
-            status: order.status, 
-            created_at: order.createdAt || new Date().toISOString()
+            id: order.id, userid: order.userId, products: JSON.stringify(order.products),
+            total: order.total, status: order.status, created_at: order.createdAt || new Date().toISOString()
         });
-        if (error) {
-            console.error('Error saving order to Supabase:', error);
-            throw error;
-        }
-        console.log('Order saved to Supabase:', order.id);
+        if (error) throw error;
         return true;
     } catch (err) {
-        console.error('Error saving order to Supabase:', err);
         return false;
     }
 }
@@ -9023,68 +8972,94 @@ const defaultProducts = [
 ];
 
 // Variable global para almacenar productos cacheados
-window.productsCache = null;
 let productsCache = null;
 let supabaseDataLoaded = false;
 
-// Initialize database - Ya no crea datos por defecto
+// Initialize database
 function initDB() {
-    // Solo verifica que el localStorage tenga datos válidos
-    // No crea nada por defecto
+    try {
+        const data = localStorage.getItem('camponuevo_products');
+        let isEmpty = !data;
+        
+        // Verificar si es un JSON válido y no está vacío
+        if (data) {
+            try {
+                const parsed = JSON.parse(data);
+                isEmpty = !parsed || parsed.length === 0;
+            } catch (e) {
+                // Si hay error al parsear, consideramos los datos corruptos
+                console.warn('Corrupted localStorage data, resetting...');
+                isEmpty = true;
+            }
+        }
+        
+        if (isEmpty) {
+            console.log('Initializing products from default data...');
+            localStorage.setItem('camponuevo_products', JSON.stringify(defaultProducts));
+        }
+    } catch (e) {
+        console.error('Error in initDB:', e);
+    }
 }
 
-// Get all products - ONLY from Supabase
-async function getProductsAsync(forceReload = false) {
-    if (productsCache && !forceReload) return productsCache;
+// Get all products - prioritize Supabase over localStorage
+async function getProductsAsync() {
+    if (productsCache) return productsCache;
     
-    // Only load from Supabase - no fallback to localStorage
+    // Try to load from Supabase first if available
     if (isSupabaseAvailable()) {
         try {
             const supabaseProducts = await getProductsFromSupabase();
             if (supabaseProducts && supabaseProducts.length > 0) {
-                const mappedProducts = supabaseProducts.map(p => {
-                    const mapped = {
-                        id: p.id, title: p.title, price: p.price, laboratory: p.laboratory,
-                        action: p.action || p.description || '', subCategory: p.subcategory,
-                        subCategories: p.subcategories || [], animalBreeds: p.animalbreeds || [],
-                        volumeWeight: p.volume, image: p.image, drugs: p.drugs || [],
-                        dose: p.dose, externalLink: p.externallink,
-                        indications: p.indications || '',
-                        labels: p.labels || [],
-                        created_at: p.created_at
-                    };
-                    return addAutoLabel(mapped);
-                });
+                const mappedProducts = supabaseProducts.map(p => ({
+                    id: p.id, title: p.title, price: p.price, laboratory: p.laboratory,
+                    description: p.description, subCategory: p.subcategory,
+                    subCategories: p.subcategories || [], animalBreeds: p.animalbreeds || [],
+                    volumeWeight: p.volume, image: p.image, drugs: p.drugs || [],
+                    dose: p.dose, externalLink: p.externallink
+                }));
                 
-                // Sync to localStorage for offline access
                 localStorage.setItem('camponuevo_products', JSON.stringify(mappedProducts));
                 productsCache = mappedProducts;
                 console.log('Products loaded from Supabase:', mappedProducts.length);
                 return mappedProducts;
-            } else {
-                // Supabase is empty - clear cache and return empty
-                productsCache = [];
-                localStorage.removeItem('camponuevo_products');
-                console.log('Supabase products empty, returning empty array');
-                return [];
             }
         } catch (err) {
-            console.error('Error loading from Supabase:', err.message);
-            productsCache = [];
-            return [];
+            console.log('Supabase load failed, falling back to localStorage:', err.message);
         }
     }
     
-    // Supabase not available - return empty
-    console.log('Supabase not available, returning empty products');
-    productsCache = [];
-    return [];
+    // Fallback to localStorage
+    initDB();
+    const data = localStorage.getItem('camponuevo_products');
+    if (!data) return [];
+    try {
+        const products = JSON.parse(data);
+        console.log('Products loaded from localStorage:', products.length);
+        productsCache = products;
+        return products;
+    } catch (e) {
+        console.error('Error parsing products:', e);
+        return [];
+    }
 }
 
 // Sync wrapper for backward compatibility
 function getProducts() {
-    // Return cached products directly (loaded via getProductsAsync)
-    return productsCache || [];
+    const products = getProductsAsync();
+    if (products && typeof products.then === 'function') {
+        console.warn('getProducts called synchronously but returns a Promise. Use getProductsAsync() for async access.');
+        // Return cached or localStorage while async loads
+        initDB();
+        const data = localStorage.getItem('camponuevo_products');
+        if (data) {
+            try {
+                return JSON.parse(data);
+            } catch (e) { return []; }
+        }
+        return [];
+    }
+    return products || [];
 }
 
 // Cargar datos desde Supabase en background (sin bloquear)
@@ -9094,18 +9069,13 @@ async function loadFromSupabaseInBackground() {
     try {
         const supabaseProducts = await getProductsFromSupabase();
         if (supabaseProducts && supabaseProducts.length > 0) {
-            const mappedProducts = supabaseProducts.map(p => {
-                const mapped = {
-                    id: p.id, title: p.title, price: p.price, laboratory: p.laboratory,
-                    description: p.description, subCategory: p.subcategory,
-                    subCategories: p.subcategories || [], animalBreeds: p.animalbreeds || [],
-                    volumeWeight: p.volume, image: p.image, drugs: p.drugs || [],
-                    dose: p.dose, externalLink: p.externallink,
-                    labels: p.labels || [],
-                    created_at: p.created_at
-                };
-                return addAutoLabel(mapped);
-            });
+            const mappedProducts = supabaseProducts.map(p => ({
+                id: p.id, title: p.title, price: p.price, laboratory: p.laboratory,
+                description: p.description, subCategory: p.subcategory,
+                subCategories: p.subcategories || [], animalBreeds: p.animalbreeds || [],
+                volumeWeight: p.volume, image: p.image, drugs: p.drugs || [],
+                dose: p.dose, externalLink: p.externallink
+            }));
             
             // Guardar en localStorage para futuras cargas
             localStorage.setItem('camponuevo_products', JSON.stringify(mappedProducts));
@@ -9127,7 +9097,7 @@ function getProductById(id) {
 
 // Save a product (Create or Update)
 function saveProduct(product) {
-    const products = productsCache || [];
+    const products = getProducts();
     const index = products.findIndex(p => p.id === product.id);
     
     if (index !== -1) {
@@ -9138,7 +9108,6 @@ function saveProduct(product) {
         products.push(product);
     }
     
-    productsCache = products;
     localStorage.setItem('camponuevo_products', JSON.stringify(products));
     
     // Also save to Supabase in background
@@ -9155,46 +9124,32 @@ async function saveProductToSupabase(product) {
         console.log('Supabase not available, product saved locally only');
         return;
     }
-    
-    // Helper to convert string or array to proper array
-    const toArray = (val) => {
-        if (Array.isArray(val)) return val;
-        if (!val) return [];
-        if (typeof val === 'string') {
-            return val.split(';').map(s => s.trim()).filter(s => s.length > 0);
-        }
-        return [];
-    };
-    
     try {
         const productData = {
             id: product.id,
             title: product.title,
             price: product.price,
             laboratory: product.laboratory || '',
-            action: product.action || product.description || '',
-            indications: product.indications || '',
+            description: product.description || '',
             subcategory: product.subCategory || product.subcategory || '',
-            subcategories: toArray(product.subCategories || product.subcategories),
-            animalbreeds: toArray(product.animalBreeds || product.animalbreeds),
+            subcategories: product.subCategories || product.subcategories || [],
+            animalbreeds: product.animalBreeds || product.animalbreeds || [],
             volume: product.volumeWeight || product.volume || '',
             image: product.image || '',
-            drugs: toArray(product.drugs),
+            drugs: product.drugs || [],
             dose: product.dose || '',
-            externallink: product.externalLink || product.externallink || '',
-            labels: toArray(product.labels)
+            externallink: product.externalLink || product.externallink || ''
         };
         
-        // Check if product exists in Supabase and get original created_at
-        const { data: existingProduct } = await window.supabase
+        // Check if product exists in Supabase
+        const { data: existing } = await window.supabase
             .from('products')
-            .select('id, created_at')
+            .select('id')
             .eq('id', product.id)
             .single();
         
-        if (existingProduct) {
-            // Update: keep original created_at (even if null)
-            productData.created_at = existingProduct.created_at;
+        if (existing) {
+            // Update
             const { error } = await window.supabase
                 .from('products')
                 .update(productData)
@@ -9202,8 +9157,7 @@ async function saveProductToSupabase(product) {
             if (error) throw error;
             console.log('Product updated in Supabase:', product.title);
         } else {
-            // Insert: set new created_at
-            productData.created_at = new Date().toISOString();
+            // Insert
             const { error } = await window.supabase
                 .from('products')
                 .insert([productData]);
@@ -9219,7 +9173,6 @@ async function saveProductToSupabase(product) {
 function deleteProduct(id) {
     let products = getProducts();
     products = products.filter(p => p.id !== id);
-    productsCache = products;
     localStorage.setItem('camponuevo_products', JSON.stringify(products));
     
     // Also delete from Supabase
@@ -9229,24 +9182,12 @@ function deleteProduct(id) {
 async function deleteProductFromSupabase(id) {
     if (!isSupabaseAvailable()) return;
     try {
-        // Get all products with this ID first
-        const { data: duplicates, error: fetchError } = await window.supabase
+        const { error } = await window.supabase
             .from('products')
-            .select('id, title')
+            .delete()
             .eq('id', id);
-        
-        if (fetchError) throw fetchError;
-        
-        // Delete only the first one (to handle duplicates one at a time)
-        if (duplicates && duplicates.length > 0) {
-            const { error } = await window.supabase
-                .from('products')
-                .delete()
-                .eq('id', id)
-                .limit(1);
-            if (error) throw error;
-            console.log('Product deleted from Supabase:', id, '(remaining duplicates:', duplicates.length - 1, ')');
-        }
+        if (error) throw error;
+        console.log('Product deleted from Supabase:', id);
     } catch (err) {
         console.error('Error deleting product from Supabase:', err.message);
     }
@@ -9263,7 +9204,21 @@ const defaultSubCategories = [
     "Artículos rurales"
 ];
 
-// Eliminado: initSubCategories ya no crea datos por defecto
+// Initialize sub-categories in storage if empty
+function initSubCategories() {
+    let stored = localStorage.getItem('camponuevo_subcategories');
+    if (!stored) {
+        localStorage.setItem('camponuevo_subcategories', JSON.stringify(defaultSubCategories));
+    } else {
+        // Ensure "Productos destacados" is always present
+        const cats = JSON.parse(stored);
+        if (!cats.includes('Productos destacados')) {
+            cats.push('Productos destacados');
+            cats.sort();
+            localStorage.setItem('camponuevo_subcategories', JSON.stringify(cats));
+        }
+    }
+}
 
 let subCategoriesCache = null;
 let subCategoriesSupabaseLoaded = false;
@@ -9271,12 +9226,10 @@ let subCategoriesSupabaseLoaded = false;
 function getSubCategories() {
     if (subCategoriesCache) return subCategoriesCache;
     
-    // Cargar desde localStorage si existe, si no array vacío
-    const data = localStorage.getItem('camponuevo_subcategories');
-    subCategoriesCache = data ? JSON.parse(data) : [];
+    initSubCategories();
+    subCategoriesCache = JSON.parse(localStorage.getItem('camponuevo_subcategories') || '[]');
     
-    // Cargar desde Supabase en background
-    if (!subCategoriesSupabaseLoaded && isSupabaseAvailable()) {
+    if (!subCategoriesSupabaseLoaded) {
         loadSubCategoriesFromSupabaseInBackground();
     }
     
@@ -9297,60 +9250,28 @@ async function loadSubCategoriesFromSupabaseInBackground() {
 }
 
 // Save/Update a sub-category
-async function saveSubCategory(name) {
+function saveSubCategory(name) {
     let cats = getSubCategories();
     if (!cats.includes(name)) {
         cats.push(name);
         cats.sort();
         localStorage.setItem('camponuevo_subcategories', JSON.stringify(cats));
-        subCategoriesCache = cats;
-    }
-    
-    // Also save to Supabase
-    if (isSupabaseAvailable()) {
-        try {
-            const { data: existing } = await window.supabase
-                .from('subcategories')
-                .select('name')
-                .eq('name', name)
-                .single();
-            
-            if (!existing) {
-                await window.supabase
-                    .from('subcategories')
-                    .insert([{ name: name }]);
-                console.log('Subcategory saved to Supabase:', name);
-            }
-        } catch (err) {
-            console.error('Error saving subcategory to Supabase:', err.message);
-        }
     }
 }
 
 // Delete a sub-category
-async function deleteSubCategory(name) {
+function deleteSubCategory(name) {
     let cats = getSubCategories();
     cats = cats.filter(c => c !== name);
-    subCategoriesCache = cats;
     localStorage.setItem('camponuevo_subcategories', JSON.stringify(cats));
-    
-    if (isSupabaseAvailable()) {
-        try {
-            await window.supabase.from('subcategories').delete().eq('name', name);
-            console.log('Subcategory deleted from Supabase:', name);
-        } catch (err) {
-            console.error('Error deleting subcategory from Supabase:', err.message);
-        }
-    }
 }
 
 // Update a sub-category name
-async function updateSubCategoryName(oldName, newName) {
+function updateSubCategoryName(oldName, newName) {
     let cats = getSubCategories();
     const index = cats.indexOf(oldName);
     if (index !== -1) {
         cats[index] = newName;
-        subCategoriesCache = cats;
         localStorage.setItem('camponuevo_subcategories', JSON.stringify(cats));
     }
 }
@@ -9400,8 +9321,12 @@ const defaultCategories = [
     }
 ];
 
-// Eliminado: initCategories ya no crea datos por defecto
-// Los datos ahora vienen solo de Supabase
+function initCategories() {
+    let stored = localStorage.getItem('camponuevo_categories');
+    if (!stored) {
+        localStorage.setItem('camponuevo_categories', JSON.stringify(defaultCategories));
+    }
+}
 
 let categoriesCache = null;
 let categoriesSupabaseLoaded = false;
@@ -9522,8 +9447,6 @@ async function deleteCategory(id) {
     const categories = await getCategories();
     const filtered = categories.filter(c => c.id !== id);
     
-    categoriesCache = filtered;
-    
     // Guardar en localStorage
     localStorage.setItem('camponuevo_categories', JSON.stringify(filtered));
     
@@ -9543,8 +9466,6 @@ async function updateCategoryName(id, newName) {
     const index = categories.findIndex(c => c.id === id);
     if (index !== -1) {
         categories[index].name = newName;
-        
-        categoriesCache = categories;
         
         // Guardar en localStorage
         localStorage.setItem('camponuevo_categories', JSON.stringify(categories));
@@ -9615,52 +9536,34 @@ let homeCategoriesCache = null;
 let homeCategoriesSupabaseLoaded = false;
 
 async function getHomeCategories() {
-    if (homeCategoriesCache && homeCategoriesCache.length > 0) {
-        const valid = homeCategoriesCache.filter(c => c.id);
-        if (valid.length !== homeCategoriesCache.length) {
-            console.log('Cleaning cached home categories:', homeCategoriesCache.length, '->', valid.length);
-            homeCategoriesCache = valid;
-            await saveHomeCategories(valid);
-        }
-        console.log('Returning cached home categories:', homeCategoriesCache);
-        return homeCategoriesCache;
-    }
+    if (homeCategoriesCache) return homeCategoriesCache;
     
     // Intentar cargar desde Supabase primero
     if (isSupabaseAvailable()) {
         try {
             const supabaseHomeCats = await getHomeCategoriesFromSupabase();
             if (supabaseHomeCats && supabaseHomeCats.length > 0) {
-                // Merge with localStorage to preserve SVG data
-                const stored = localStorage.getItem('camponuevo_home_categories');
-                if (stored) {
-                    const localCats = JSON.parse(stored);
-                    supabaseHomeCats.forEach(supabaseCat => {
-                        const localCat = localCats.find(lc => lc.id === supabaseCat.id);
-                        if (localCat && localCat.svg) {
-                            supabaseCat.svg = localCat.svg;
-                        }
-                    });
-                }
                 homeCategoriesCache = supabaseHomeCats;
                 console.log('Home categories loaded from Supabase:', homeCategoriesCache.length);
                 return homeCategoriesCache;
             }
         } catch (err) {
-            console.warn('Error loading home categories from Supabase:', err.message);
+            console.warn('Error loading home categories from Supabase, trying localStorage:', err.message);
         }
     }
     
     // Fallback a localStorage
+    initCategories();
     const stored = localStorage.getItem('camponuevo_home_categories');
-    if (stored) {
-        homeCategoriesCache = JSON.parse(stored);
-        console.log('Home categories loaded from localStorage:', homeCategoriesCache.length);
-        return homeCategoriesCache;
+    if (!stored) {
+        const cats = await getCategories();
+        const defaultHome = cats.slice(0, 4).map(c => ({ id: c.id, svg: null }));
+        localStorage.setItem('camponuevo_home_categories', JSON.stringify(defaultHome));
+        homeCategoriesCache = defaultHome;
+        return defaultHome;
     }
-    
-    console.log('No home categories found, returning empty array');
-    homeCategoriesCache = [];
+    homeCategoriesCache = JSON.parse(stored);
+    console.log('Home categories loaded from localStorage:', homeCategoriesCache.length);
     return homeCategoriesCache;
 }
 
@@ -9696,44 +9599,24 @@ async function addCategoryToHome(categoryId) {
 }
 
 async function removeCategoryFromHome(categoryId) {
-    console.log('Removing category from home:', categoryId);
-    let current = await getHomeCategories();
-    console.log('Current home categories:', current);
-    
-    // Filter out undefined categories AND the one being removed
-    current = current.filter(c => c.id && c.id !== categoryId);
-    console.log('Filtered home categories:', current);
-    homeCategoriesCache = current;
-    await saveHomeCategories(current);
-    return current;
-}
-
-// Utility function to clean up home categories with undefined IDs
-async function cleanupHomeCategories() {
-    let current = await getHomeCategories();
-    const cleaned = current.filter(c => c.id);
-    if (cleaned.length !== current.length) {
-        console.log('Cleaning up home categories:', current.length, '->', cleaned.length);
-        homeCategoriesCache = cleaned;
-        await saveHomeCategories(cleaned);
-    }
-    return cleaned;
+    const current = await getHomeCategories();
+    const filtered = current.filter(c => c.id !== categoryId);
+    await saveHomeCategories(filtered);
+    return filtered;
 }
 
 function reorderHomeCategories(categories) {
     saveHomeCategories(categories);
 }
 
-async function updateCategorySvg(categoryId, svgContent) {
-    const current = await getHomeCategories();
-    const currentArray = Array.isArray(current) ? current : [];
-    const cat = currentArray.find(c => c && c.id === categoryId);
-    
+function updateCategorySvg(categoryId, svgContent) {
+    const current = getHomeCategories();
+    const cat = current.find(c => c.id === categoryId);
     if (cat) {
         cat.svg = svgContent;
-        await saveHomeCategories(currentArray);
+        saveHomeCategories(current);
     }
-    return currentArray;
+    return current;
 }
 
 function isCategoryInHome(categoryId) {
@@ -9775,7 +9658,12 @@ const defaultLaboratories = [
     "Varios"
 ];
 
-// Eliminado: initLaboratories ya no crea datos por defecto
+// Initialize laboratories in storage if empty
+function initLaboratories() {
+    if (!localStorage.getItem('camponuevo_laboratories')) {
+        localStorage.setItem('camponuevo_laboratories', JSON.stringify(defaultLaboratories));
+    }
+}
 
 let laboratoriesCache = null;
 let laboratoriesSupabaseLoaded = false;
@@ -9783,14 +9671,12 @@ let laboratoriesSupabaseLoaded = false;
 function getLaboratories() {
     if (laboratoriesCache) return laboratoriesCache;
     
-    // Intentar cargar desde Supabase primero sin crear datos por defecto
-    if (isSupabaseAvailable()) {
+    initLaboratories();
+    laboratoriesCache = JSON.parse(localStorage.getItem('camponuevo_laboratories') || '[]');
+    
+    if (!laboratoriesSupabaseLoaded) {
         loadLaboratoriesFromSupabaseInBackground();
     }
-    
-    // Cargar desde localStorage si existe, si no array vacío
-    const data = localStorage.getItem('camponuevo_laboratories');
-    laboratoriesCache = data ? JSON.parse(data) : [];
     
     return laboratoriesCache;
 }
@@ -9810,33 +9696,12 @@ async function loadLaboratoriesFromSupabaseInBackground() {
 }
 
 // Save/Update a laboratory
-async function saveLaboratory(name) {
+function saveLaboratory(name) {
     let labs = getLaboratories();
     if (!labs.includes(name)) {
         labs.push(name);
         labs.sort();
         localStorage.setItem('camponuevo_laboratories', JSON.stringify(labs));
-        laboratoriesCache = labs;
-    }
-    
-    // Also save to Supabase
-    if (isSupabaseAvailable()) {
-        try {
-            const { data: existing } = await window.supabase
-                .from('laboratories')
-                .select('name')
-                .eq('name', name)
-                .single();
-            
-            if (!existing) {
-                await window.supabase
-                    .from('laboratories')
-                    .insert([{ name: name }]);
-                console.log('Laboratory saved to Supabase:', name);
-            }
-        } catch (err) {
-            console.error('Error saving laboratory to Supabase:', err.message);
-        }
     }
 }
 
@@ -9870,9 +9735,19 @@ async function updateLaboratoryName(oldName, newName) {
 
 // --- label Management ---
 
-// Eliminado: defaultLabels ya no se crea por defecto
+const defaultLabels = [
+    { name: "Nuevo", color: "#4caf50" },      // secondary
+    { name: "Oferta", color: "#f44336" },     // red-500
+    { name: "Destacado", color: "#ff9800" },  // amber-500
+    { name: "Promoción", color: "#2196f3" }   // blue-500
+];
 
-// Eliminado: initLabels ya no crea datos por defecto
+// Initialize labels in storage if empty
+function initLabels() {
+    if (!localStorage.getItem('camponuevo_labels')) {
+        localStorage.setItem('camponuevo_labels', JSON.stringify(defaultLabels));
+    }
+}
 
 let labelsCache = null;
 let labelsSupabaseLoaded = false;
@@ -9880,24 +9755,28 @@ let labelsSupabaseLoaded = false;
 function getLabels() {
     if (labelsCache) return labelsCache;
     
-    // Intentar cargar desde Supabase primero
-    if (isSupabaseAvailable()) {
-        loadLabelsFromSupabaseInBackground();
-    }
+    initLabels();
+    let labels = JSON.parse(localStorage.getItem('camponuevo_labels') || '[]');
     
-    // Cargar desde localStorage si existe
-    const data = localStorage.getItem('camponuevo_labels');
-    let labels = data ? JSON.parse(data) : [];
-    
-    // Migrar formato antiguo si es necesario
+    let migrated = false;
     labels = labels.map(l => {
         if (typeof l === 'string') {
+            migrated = true;
             return { name: l, color: "#2d5a27" };
         }
         return l;
     });
-    
+
+    if (migrated) {
+        localStorage.setItem('camponuevo_labels', JSON.stringify(labels));
+    }
+
     labelsCache = labels;
+    
+    if (!labelsSupabaseLoaded) {
+        loadLabelsFromSupabaseInBackground();
+    }
+    
     return labelsCache;
 }
 
@@ -9915,7 +9794,7 @@ async function loadLabelsFromSupabaseInBackground() {
 }
 
 // Save/Update a label object
-async function saveLabel(labelObj, originalName = null) {
+function saveLabel(labelObj, originalName = null) {
     let labels = getLabels();
     
     if (originalName && originalName !== labelObj.name) {
@@ -9940,27 +9819,6 @@ async function saveLabel(labelObj, originalName = null) {
     
     labels.sort((a, b) => a.name.localeCompare(b.name));
     localStorage.setItem('camponuevo_labels', JSON.stringify(labels));
-    labelsCache = labels;
-    
-    // Also save to Supabase
-    if (isSupabaseAvailable()) {
-        try {
-            const { data: existing } = await window.supabase
-                .from('labels')
-                .select('name')
-                .eq('name', labelObj.name)
-                .single();
-            
-            if (!existing) {
-                await window.supabase
-                    .from('labels')
-                    .insert([{ name: labelObj.name }]);
-                console.log('Label saved to Supabase:', labelObj.name);
-            }
-        } catch (err) {
-            console.error('Error saving label to Supabase:', err.message);
-        }
-    }
 }
 
 // Function to update label name across all products
@@ -9980,10 +9838,9 @@ function renameLabelGlobal(oldName, newName) {
 }
 
 // Delete a label
-async function deleteLabel(name) {
+function deleteLabel(name) {
     let labels = getLabels();
     labels = labels.filter(l => l.name !== name);
-    labelsCache = labels;
     localStorage.setItem('camponuevo_labels', JSON.stringify(labels));
     
     // Also remove from all products for consistency
@@ -9994,15 +9851,6 @@ async function deleteLabel(name) {
             saveProduct(p);
         }
     });
-    
-    if (isSupabaseAvailable()) {
-        try {
-            await window.supabase.from('labels').delete().eq('name', name);
-            console.log('Label deleted from Supabase:', name);
-        } catch (err) {
-            console.error('Error deleting label from Supabase:', err.message);
-        }
-    }
 }
 
 // Update a label name
@@ -10109,85 +9957,10 @@ function initUsers() {
     }
 }
 
-// Get all users (from localStorage + optionally from Supabase)
-let usersSupabaseLoaded = false;
-
+// Get all users
 function getUsers() {
     initUsers();
     return JSON.parse(localStorage.getItem('camponuevo_users'));
-}
-
-// Load users from Supabase in background
-async function loadUsersFromSupabaseInBackground() {
-    if (usersSupabaseLoaded) return;
-    if (!isSupabaseAvailable()) return;
-    
-    try {
-        const { data: supabaseUsers, error } = await window.supabase
-            .from('users')
-            .select('*');
-        
-        if (error) throw error;
-        
-        if (supabaseUsers && supabaseUsers.length > 0) {
-            // Merge with local users (Supabase users take precedence)
-            const localUsers = getUsers();
-            const supabaseUserIds = new Set(supabaseUsers.map(u => u.id));
-            
-            // Add local users that don't exist in Supabase
-            const mergedUsers = [...supabaseUsers];
-            localUsers.forEach(localUser => {
-                if (!supabaseUserIds.has(localUser.id)) {
-                    mergedUsers.push(localUser);
-                }
-            });
-            
-            // Save merged users to localStorage
-            saveUsers(mergedUsers);
-            usersSupabaseLoaded = true;
-            console.log('Users loaded from Supabase:', supabaseUsers.length);
-        }
-    } catch (err) {
-        console.warn('Could not load users from Supabase:', err.message);
-    }
-}
-
-// Get all users including from Supabase (for admin)
-async function getAllUsers() {
-    // Trigger background load
-    loadUsersFromSupabaseInBackground();
-    
-    // Return local users (background load will update them)
-    return getUsers();
-}
-
-// Get all orders from Supabase (for admin)
-async function getAllOrdersFromSupabase() {
-    if (!isSupabaseAvailable()) return [];
-    
-    try {
-        const { data: orders, error } = await window.supabase
-            .from('orders')
-            .select('*')
-            .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        return orders.map(o => ({
-            id: o.id, 
-            userId: o.userid, 
-            items: o.products ? JSON.parse(o.products) : [],
-            customerInfo: o.customer_info ? JSON.parse(o.customer_info) : null,
-            subtotal: o.subtotal,
-            iva: o.iva,
-            total: o.total, 
-            status: o.status, 
-            createdAt: o.created_at
-        }));
-    } catch (err) {
-        console.warn('Could not load orders from Supabase:', err.message);
-        return [];
-    }
 }
 
 // Save users to storage
@@ -10217,378 +9990,178 @@ async function hashPassword(password) {
 
 // Register new user
 async function registerUser(userData) {
-    // Check if Supabase Auth is available
-    if (isSupabaseAvailable() && window.supabase.auth) {
+    // Check if Supabase is available
+    if (isSupabaseAvailable()) {
         try {
-            // Sign up with Supabase Auth - email verification required
-            const { data, error } = await window.supabase.auth.signUp({
-                email: userData.email.toLowerCase(),
-                password: userData.password,
-                options: {
-                    data: {
-                        name: userData.name
-                    },
-                    emailRedirectTo: window.location.origin + '/verify-email.html'
-                }
-            });
+            // Check if email already exists in Supabase
+            const { data: existingUsers, error: checkError } = await window.supabase
+                .from('users')
+                .select('email')
+                .eq('email', userData.email.toLowerCase());
             
-            if (error) {
-                // Check if user already exists
-                if (error.message.includes('already registered') || error.message.includes('already been registered')) {
-                    return { success: false, message: "El email ya está registrado" };
-                }
-                // Check for rate limit error
-                if (error.message.includes('rate limit') || error.message.includes('too many requests')) {
-                    return { success: false, message: "Demasiadas solicitudes. Por favor espera unos minutos e intenta nuevamente." };
-                }
-                throw error;
+            if (checkError) throw checkError;
+            
+            if (existingUsers && existingUsers.length > 0) {
+                return { success: false, message: "El email ya está registrado" };
             }
             
-            // Check if email confirmation is required
-            if (data.user && !data.session) {
-                // Email confirmation required - save user to users table with pending status
-                try {
-                    console.log('Attempting to save user to Supabase:', {
-                        id: data.user.id,
-                        email: userData.email.toLowerCase(),
-                        name: userData.name
-                    });
-                    
-                    const { error: saveError } = await window.supabase.from('users').upsert({
-                        id: data.user.id,
-                        email: userData.email.toLowerCase(),
-                        name: userData.name,
-                        password_hash: await hashPassword(userData.password),
-                        created_at: new Date().toISOString()
-                    });
-                    
-                    if (saveError) {
-                        console.error('Error saving user to users table:', saveError);
-                    } else {
-                        console.log('User saved to Supabase users table successfully');
-                    }
-                } catch (saveErr) {
-                    console.error('Exception saving to users table:', saveErr);
-                }
-                
-                return { 
-                    success: true, 
-                    requiresEmailVerification: true,
-                    message: "Se ha enviado un correo de verificación a tu bandeja de entrada. Por favor, haz clic en el enlace para activar tu cuenta." 
-                };
-            }
+            // Hash password
+            const passwordHash = await hashPassword(userData.password);
             
-            // If no confirmation required (auto-confirm)
-            const userId = data.user ? data.user.id : generateId();
+            // Create user object
+            const user = {
+                id: generateId(),
+                email: userData.email,
+                passwordHash: passwordHash,
+                name: userData.name,
+                phone: "",
+                securityQuestion: "",
+                securityAnswerHash: "",
+                location: "",
+                identification: "",
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString()
+            };
             
-            // Save user data to Supabase users table
-            try {
-                console.log('Attempting to save user to Supabase (auto-confirm):', {
-                    id: userId,
-                    email: userData.email.toLowerCase(),
-                    name: userData.name
+            // Save to Supabase
+            const { error } = await window.supabase
+                .from('users')
+                .insert({
+                    id: user.id,
+                    email: user.email,
+                    password_hash: user.passwordHash,
+                    name: user.name,
+                    phone: user.phone,
+                    security_question: user.securityQuestion,
+                    security_answer_hash: user.securityAnswerHash,
+                    location: user.location,
+                    identification: user.identification,
+                    created_at: user.createdAt,
+                    last_login: user.lastLogin
                 });
-                
-                const { error: saveError } = await window.supabase.from('users').upsert({
-                    id: userId,
-                    email: userData.email.toLowerCase(),
-                    name: userData.name,
-                    password_hash: await hashPassword(userData.password),
-                    created_at: new Date().toISOString(),
-                    last_login: new Date().toISOString()
-                });
-                
-                if (saveError) {
-                    console.error('Error saving user to users table:', saveError);
-                } else {
-                    console.log('User saved to Supabase users table successfully');
-                }
-            } catch (saveErr) {
-                console.error('Exception saving to users table:', saveErr);
-            }
             
-            // Auto-login after registration
+            if (error) throw error;
+            
+            // Auto login after registration
             sessionStorage.setItem('camponuevo_session', JSON.stringify({
-                userId: userId,
+                userId: user.id,
                 rememberMe: false
             }));
             
-            return { 
-                success: true, 
-                user: { id: userId, email: userData.email, name: userData.name },
-                message: "¡Registro exitoso! Bienvenido a Camponuevo."
-            };
+            return { success: true, user: user };
         } catch (err) {
-            console.error('Error registering user with Supabase Auth:', err.message);
-            // Fallback to local registration
-            return await registerUserLocal(userData);
+            console.error('Error registering user in Supabase:', err.message);
+            return { success: false, message: "Error al registrar usuario" };
         }
     } else {
-        // Fallback to local registration
-        return await registerUserLocal(userData);
-    }
-}
-
-// Local registration fallback - also tries to save to Supabase
-async function registerUserLocal(userData) {
-    const userId = generateId();
-    
-    // Try to save to Supabase first
-    if (isSupabaseAvailable()) {
-        try {
-            console.log('Attempting to save user to Supabase (local fallback):', {
-                id: userId,
-                email: userData.email.toLowerCase(),
-                name: userData.name
-            });
-            
-            const { error: supabaseError } = await window.supabase.from('users').upsert({
-                id: userId,
-                email: userData.email.toLowerCase(),
-                name: userData.name,
-                password_hash: await hashPassword(userData.password),
-                created_at: new Date().toISOString(),
-                last_login: new Date().toISOString()
-            });
-            
-            if (supabaseError) {
-                console.error('Error saving to Supabase:', supabaseError);
-            } else {
-                console.log('User saved to Supabase successfully (local fallback)');
-                
-                // Auto login
-                sessionStorage.setItem('camponuevo_session', JSON.stringify({
-                    userId: userId,
-                    rememberMe: false
-                }));
-                
-                return { 
-                    success: true, 
-                    user: { id: userId, email: userData.email, name: userData.name },
-                    message: "¡Registro exitoso! Bienvenido a Camponuevo."
-                };
-            }
-        } catch (e) {
-            console.error('Exception saving to Supabase:', e);
-        }
-    }
-    
-    // If Supabase save failed, save to localStorage
-    initUsers();
-    const users = getUsers();
-    
-    // Check if email already exists
-    const existingUser = users.find(u => u.email.toLowerCase() === userData.email.toLowerCase());
-    if (existingUser) {
-        return { success: false, message: "El email ya está registrado" };
-    }
-    
-    // Hash password
-    const passwordHash = await hashPassword(userData.password);
-    
-    // Create user object
-    const user = {
-        id: userId,
-        email: userData.email,
-        passwordHash: passwordHash,
-        name: userData.name,
-        phone: "",
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString(),
-        emailVerified: true
-    };
-    
-    users.push(user);
-    saveUsers(users);
-    
-    // Auto login after registration
-    sessionStorage.setItem('camponuevo_session', JSON.stringify({
-        userId: user.id,
-        rememberMe: false
-    }));
-    
-    return { success: true, user: user };
-}
-
-// Resend verification email
-async function resendVerificationEmail(email) {
-    if (!isSupabaseAvailable() || !window.supabase.auth) {
-        return { success: false, message: "Supabase no está disponible" };
-    }
-    
-    try {
-        const { error } = await window.supabase.auth.resend({
-            type: 'signup',
-            email: email.toLowerCase()
-        });
+        // Fallback to localStorage
+        initUsers();
+        const users = getUsers();
         
-        if (error) {
-            console.error('Error resending verification email:', error.message);
-            return { success: false, message: error.message };
+        // Check if email already exists
+        const existingUser = users.find(u => u.email.toLowerCase() === userData.email.toLowerCase());
+        if (existingUser) {
+            return { success: false, message: "El email ya está registrado" };
         }
         
-        return { success: true, message: "Correo de verificación enviado" };
-    } catch (err) {
-        console.error('Error resending verification email:', err.message);
-        return { success: false, message: err.message };
+        // Hash password
+        const passwordHash = await hashPassword(userData.password);
+        
+        // Create user object (without security data initially)
+        const user = {
+            id: generateId(),
+            email: userData.email,
+            passwordHash: passwordHash,
+            name: userData.name,
+            phone: "",
+            securityQuestion: "",
+            securityAnswerHash: "",
+            location: "",
+            identification: "",
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString()
+        };
+        
+        users.push(user);
+        saveUsers(users);
+        
+        // Auto login after registration
+        sessionStorage.setItem('camponuevo_session', JSON.stringify({
+            userId: user.id,
+            rememberMe: false
+        }));
+        
+        return { success: true, user: user };
     }
 }
 
 // Login user
 async function loginUser(email, password, rememberMe = false) {
-    const emailLower = email.toLowerCase();
-    console.log('Login attempt for:', emailLower);
-    
-    // Check if Supabase Auth is available
-    if (isSupabaseAvailable() && window.supabase.auth) {
+    // Check if Supabase is available
+    if (isSupabaseAvailable()) {
         try {
-            // Try to sign in with Supabase Auth
-            console.log('Trying Supabase Auth signInWithPassword...');
-            const { data, error } = await window.supabase.auth.signInWithPassword({
-                email: emailLower,
-                password: password
-            });
-            
-            if (!error && data.user) {
-                console.log('Supabase Auth login successful');
-                // Successfully logged in with Supabase Auth
-                // Update last login in users table
-                try {
-                    await window.supabase
-                        .from('users')
-                        .upsert({
-                            id: data.user.id,
-                            email: data.user.email,
-                            last_login: new Date().toISOString()
-                        });
-                } catch (e) {
-                    console.warn('Could not update last_login:', e.message);
-                }
-                
-                // Set session
-                const session = {
-                    userId: data.user.id,
-                    rememberMe: rememberMe
-                };
-                
-                sessionStorage.setItem('camponuevo_session', JSON.stringify(session));
-                
-                if (rememberMe) {
-                    localStorage.setItem('camponuevo_session', JSON.stringify(session));
-                }
-                
-                return { success: true, user: data.user };
-            }
-            
-            console.log('Supabase Auth error:', error);
-            
-            // Check if error is due to email not confirmed
-            if (error && error.message && error.message.toLowerCase().includes('email not confirmed')) {
-                return { 
-                    success: false, 
-                    needsEmailVerification: true,
-                    message: "Debes verificar tu correo electrónico antes de iniciar sesión" 
-                };
-            }
-            
-            // If Supabase Auth fails, try to authenticate with users table directly
-            // This handles the case where users are stored in the table but not in Auth
-            console.log('Trying to find user in users table...');
-            const passwordHash = await hashPassword(password);
-            
-            const { data: users, error: queryError } = await window.supabase
+            // Get user from Supabase
+            const { data: users, error } = await window.supabase
                 .from('users')
                 .select('*')
-                .eq('email', emailLower);
+                .eq('email', email.toLowerCase());
             
-            console.log('Users table query result:', users, queryError);
+            if (error) throw error;
             
-            if (queryError) {
-                console.warn('Error querying users table:', queryError.message);
+            if (!users || users.length === 0) {
+                return { success: false, message: "Email no registrado" };
             }
             
-            if (users && users.length > 0) {
-                const user = users[0];
-                console.log('User found in table:', user.email);
-                console.log('Stored password_hash:', user.password_hash);
-                console.log('Computed password_hash:', passwordHash);
-                
-                // Check password
-                if (user.password_hash === passwordHash) {
-                    // Update last login
-                    try {
-                        await window.supabase
-                            .from('users')
-                            .update({ last_login: new Date().toISOString() })
-                            .eq('id', user.id);
-                    } catch (e) {
-                        console.warn('Could not update last_login:', e.message);
-                    }
-                    
-                    // Set session
-                    const session = {
-                        userId: user.id,
-                        rememberMe: rememberMe
-                    };
-                    
-                    sessionStorage.setItem('camponuevo_session', JSON.stringify(session));
-                    
-                    if (rememberMe) {
-                        localStorage.setItem('camponuevo_session', JSON.stringify(session));
-                    }
-                    
-                    return { success: true, user: user };
-                } else {
-                    return { success: false, message: "Email o contraseña incorrectos" };
-                }
+            const user = users[0];
+            const passwordHash = await hashPassword(password);
+            
+            if (user.password_hash !== passwordHash) {
+                return { success: false, message: "Contraseña incorrecta" };
             }
             
-            // No user found in either Auth or users table
-            return { success: false, message: "Email o contraseña incorrectos" };
+            // Update last login in Supabase
+            const { error: updateError } = await window.supabase
+                .from('users')
+                .update({ last_login: new Date().toISOString() })
+                .eq('id', user.id);
             
+            if (updateError) throw updateError;
+            
+            // Set session
+            const session = {
+                userId: user.id,
+                rememberMe: rememberMe
+            };
+            
+            sessionStorage.setItem('camponuevo_session', JSON.stringify(session));
+            
+            if (rememberMe) {
+                localStorage.setItem('camponuevo_session', JSON.stringify(session));
+            }
+            
+            return { success: true, user: user };
         } catch (err) {
-            console.error('Error logging in:', err.message);
-            
-            // Try fallback to users table on any error
-            return await loginWithUsersTable(emailLower, password, rememberMe);
+            console.error('Error logging in with Supabase:', err.message);
+            return { success: false, message: "Error al iniciar sesión" };
         }
     } else {
-        // Fallback to local login
-        return await loginUserLocal(email, password, rememberMe);
-    }
-}
-
-// Login with users table directly (when Supabase Auth is not available or fails)
-async function loginWithUsersTable(email, password, rememberMe) {
-    if (!isSupabaseAvailable()) {
-        return await loginUserLocal(email, password, rememberMe);
-    }
-    
-    try {
-        const passwordHash = await hashPassword(password);
+        // Fallback to localStorage
+        initUsers();
+        const users = getUsers();
         
-        const { data: users, error } = await window.supabase
-            .from('users')
-            .select('*')
-            .eq('email', email);
-        
-        if (error) throw error;
-        
-        if (!users || users.length === 0) {
+        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+        if (!user) {
             return { success: false, message: "Email no registrado" };
         }
         
-        const user = users[0];
-        
-        if (user.password_hash !== passwordHash) {
+        const passwordHash = await hashPassword(password);
+        if (user.passwordHash !== passwordHash) {
             return { success: false, message: "Contraseña incorrecta" };
         }
         
         // Update last login
-        await window.supabase
-            .from('users')
-            .update({ last_login: new Date().toISOString() })
-            .eq('id', user.id);
+        user.lastLogin = new Date().toISOString();
+        saveUsers(users);
         
         // Set session
         const session = {
@@ -10603,164 +10176,50 @@ async function loginWithUsersTable(email, password, rememberMe) {
         }
         
         return { success: true, user: user };
-    } catch (err) {
-        console.error('Error login with users table:', err.message);
-        return await loginUserLocal(email, password, rememberMe);
     }
-}
-
-// Local login fallback
-async function loginUserLocal(email, password, rememberMe) {
-    initUsers();
-    const users = getUsers();
-    
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (!user) {
-        return { success: false, message: "Email no registrado" };
-    }
-    
-    const passwordHash = await hashPassword(password);
-    if (user.passwordHash !== passwordHash) {
-        return { success: false, message: "Contraseña incorrecta" };
-    }
-    
-    // Update last login
-    user.lastLogin = new Date().toISOString();
-    saveUsers(users);
-    
-    // Set session
-    const session = {
-        userId: user.id,
-        rememberMe: rememberMe
-    };
-    
-    sessionStorage.setItem('camponuevo_session', JSON.stringify(session));
-    
-    if (rememberMe) {
-        localStorage.setItem('camponuevo_session', JSON.stringify(session));
-    }
-    
-    return { success: true, user: user };
 }
 
 // Logout user
 function logoutUser() {
     sessionStorage.removeItem('camponuevo_session');
     localStorage.removeItem('camponuevo_session');
-    
-    // Also sign out from Supabase Auth if available
-    if (isSupabaseAvailable() && window.supabase.auth) {
-        window.supabase.auth.signOut();
-    }
 }
 
 // Get current logged in user
 async function getCurrentUser() {
-    console.log('getCurrentUser called');
-    
-    // Check if Supabase Auth has a session
-    if (isSupabaseAvailable() && window.supabase.auth) {
-        try {
-            const { data: { session }, error } = await window.supabase.auth.getSession();
-            
-            if (error) throw error;
-            
-            console.log('Session from Supabase Auth:', session);
-            
-            if (!session) {
-                // Check sessionStorage as fallback
-                const storedSession = sessionStorage.getItem('camponuevo_session') || localStorage.getItem('camponuevo_session');
-                if (!storedSession) {
-                    console.log('No session found');
-                    return null;
-                }
-                
-                const sessionData = JSON.parse(storedSession);
-                console.log('Using stored session:', sessionData);
-                
-                // Try to get user from Supabase table
-                const userFromTable = await getUserFromTable(sessionData.userId);
-                if (userFromTable) {
-                    console.log('User from table:', userFromTable);
-                    return userFromTable;
-                }
-                
-                // Fallback to local
-                const users = getUsers();
-                const user = users.find(u => u.id === sessionData.userId);
-                return user || null;
-            }
-            
-            // Get user data from auth
-            const { data: { user }, error: userError } = await window.supabase.auth.getUser();
-            
-            if (userError) throw userError;
-            
-            if (user) {
-                // Try to get additional data from users table
-                const additionalData = await getUserFromTable(user.id);
-                console.log('Additional data from table:', additionalData);
-                
-                // Merge data
-                const mergedUser = {
-                    id: user.id,
-                    email: user.email,
-                    name: additionalData?.name || user.user_metadata?.name || '',
-                    phone: additionalData?.phone || '',
-                    address: additionalData?.address || '',
-                    location: additionalData?.location || '',
-                    identification: additionalData?.identification || ''
-                };
-                console.log('Merged user:', mergedUser);
-                return mergedUser;
-            }
-            
-            return null;
-        } catch (err) {
-            console.error('Error getting current user:', err.message);
-            
-            // Fallback to stored session
-            const storedSession = sessionStorage.getItem('camponuevo_session') || localStorage.getItem('camponuevo_session');
-            if (!storedSession) return null;
-            
-            const sessionData = JSON.parse(storedSession);
-            return await getUserFromTable(sessionData.userId);
-        }
-    } else {
-        // Fallback to localStorage
-        const storedSession = sessionStorage.getItem('camponuevo_session') || localStorage.getItem('camponuevo_session');
-        if (!storedSession) return null;
-        
-        try {
-            const sessionData = JSON.parse(storedSession);
-            const users = getUsers();
-            const user = users.find(u => u.id === sessionData.userId);
-            if (!user) {
-                sessionStorage.removeItem('camponuevo_session');
-                localStorage.removeItem('camponuevo_session');
-            }
-            return user || null;
-        } catch (e) {
-            return null;
-        }
+    // Check sessionStorage first
+    let session = sessionStorage.getItem('camponuevo_session');
+    if (!session) {
+        // Check localStorage for "remember me"
+        session = localStorage.getItem('camponuevo_session');
     }
-}
-
-// Helper function to get user from users table
-async function getUserFromTable(userId) {
-    if (!isSupabaseAvailable()) return null;
+    
+    if (!session) return null;
     
     try {
-        const { data: users, error } = await window.supabase
-            .from('users')
-            .select('*')
-            .eq('id', userId);
+        const sessionData = JSON.parse(session);
         
-        if (error) throw error;
-        
-        return users && users.length > 0 ? users[0] : null;
-    } catch (err) {
-        console.warn('Error fetching user from table:', err.message);
+        // Check if Supabase is available
+        if (isSupabaseAvailable()) {
+            try {
+                const { data: users, error } = await window.supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', sessionData.userId);
+                
+                if (error) throw error;
+                
+                return users && users.length > 0 ? users[0] : null;
+            } catch (err) {
+                console.error('Error fetching user from Supabase:', err.message);
+                return null;
+            }
+        } else {
+            // Fallback to localStorage
+            const users = getUsers();
+            return users.find(u => u.id === sessionData.userId) || null;
+        }
+    } catch (e) {
         return null;
     }
 }
@@ -10841,38 +10300,20 @@ async function updateUserProfile(userId, updates) {
     if (updates.name) users[userIndex].name = updates.name;
     if (updates.phone !== undefined) users[userIndex].phone = updates.phone;
     if (updates.location !== undefined) users[userIndex].location = updates.location;
-    if (updates.address !== undefined) users[userIndex].address = updates.address;
     if (updates.identification !== undefined) users[userIndex].identification = updates.identification;
     
-    // Save to localStorage
-    saveUsers(users);
-    
-    // Also save to Supabase if available
-    if (isSupabaseAvailable()) {
-        try {
-            const supabaseUpdates = {
-                id: userId,
-                name: users[userIndex].name,
-                phone: users[userIndex].phone || '',
-                address: users[userIndex].address || '',
-                location: users[userIndex].location || '',
-                identification: users[userIndex].identification || ''
-            };
-            
-            const { error } = await window.supabase
-                .from('users')
-                .upsert(supabaseUpdates);
-            
-            if (error) {
-                console.warn('Could not update user in Supabase:', error.message);
-            } else {
-                console.log('User profile updated in Supabase');
-            }
-        } catch (err) {
-            console.warn('Error updating user in Supabase:', err.message);
-        }
+    // Update security question if provided
+    if (updates.securityQuestion) {
+        users[userIndex].securityQuestion = updates.securityQuestion;
     }
     
+    // Update security answer if provided (hash it first)
+    if (updates.securityAnswer) {
+        const answerHash = await hashPassword(updates.securityAnswer);
+        users[userIndex].securityAnswerHash = answerHash;
+    }
+    
+    saveUsers(users);
     return { success: true, user: users[userIndex] };
 }
 
@@ -10931,21 +10372,14 @@ async function loadOrdersFromSupabaseInBackground() {
         const supabaseOrders = await getOrdersFromSupabase();
         if (supabaseOrders && supabaseOrders.length > 0) {
             ordersCache = supabaseOrders.map(o => ({
-                id: o.id, 
-                userId: o.userid, 
-                items: o.products ? JSON.parse(o.products) : [],
-                customerInfo: o.customer_info ? JSON.parse(o.customer_info) : null,
-                subtotal: o.subtotal,
-                iva: o.iva,
-                total: o.total, 
-                status: o.status, 
-                createdAt: o.created_at
+                id: o.id, userId: o.userid, items: JSON.parse(o.products || '[]'),
+                total: o.total, status: o.status, createdAt: o.created_at
             }));
             ordersSupabaseLoaded = true;
-            console.log('Orders loaded from Supabase in background:', ordersCache.length, 'orders');
+            console.log('Orders loaded from Supabase in background');
         }
     } catch (err) {
-        console.log('Supabase orders not available yet:', err.message);
+        console.log('Supabase orders not available yet');
     }
 }
 
@@ -11011,14 +10445,6 @@ window.getProductsAsync = getProductsAsync;
 window.getProductById = getProductById;
 window.saveProduct = saveProduct;
 window.deleteProduct = deleteProduct;
-window.deleteProductFromSupabase = deleteProductFromSupabase;
-
-// Force reload products from Supabase
-window.reloadProducts = async function() {
-    productsCache = null;
-    localStorage.removeItem('camponuevo_products');
-    return await getProductsAsync(true);
-};
 window.getCategories = getCategories;
 window.getCategoryById = getCategoryById;
 window.saveCategory = saveCategory;
@@ -11041,7 +10467,6 @@ window.getOrders = getOrders;
 window.saveOrder = saveOrder;
 window.getOrdersByUser = getOrdersByUser;
 window.getNextOrderNumber = getNextOrderNumber;
-window.getUserFromTable = getUserFromTable;
 window.registerUser = registerUser;
 window.loginUser = loginUser;
 window.logoutUser = logoutUser;
@@ -11054,59 +10479,8 @@ window.getCart = getCart;
 window.saveCart = saveCart;
 window.addToCart = addToCart;
 window.removeFromCart = removeFromCart;
+window.updateCartItemQuantity = updateCartItemQuantity;
 window.clearCart = clearCart;
 window.getSecurityQuestions = getSecurityQuestions;
 window.generateId = generateId;
 window.hashPassword = hashPassword;
-window.resendVerificationEmail = resendVerificationEmail;
-
-// Listen for Supabase Auth state changes (email verification, etc.)
-if (typeof window !== 'undefined') {
-    window.addEventListener('DOMContentLoaded', function() {
-        // Wait for Supabase to be ready
-        function setupAuthListener() {
-            if (!window.supabase || !window.supabase.auth) {
-                setTimeout(setupAuthListener, 100);
-                return;
-            }
-            
-            // Listen for auth state changes
-            window.supabase.auth.onAuthStateChange(async (event, session) => {
-                console.log('Auth state changed:', event);
-                
-                if (event === 'SIGNED_IN' && session) {
-                    console.log('User signed in:', session.user);
-                    
-                    // Update session storage
-                    sessionStorage.setItem('camponuevo_session', JSON.stringify({
-                        userId: session.user.id,
-                        rememberMe: true
-                    }));
-                    
-                    // Dispatch event for UI update
-                    document.dispatchEvent(new CustomEvent('userLoggedIn', { detail: session.user }));
-                }
-                
-                if (event === 'SIGNED_OUT') {
-                    console.log('User signed out');
-                    sessionStorage.removeItem('camponuevo_session');
-                    localStorage.removeItem('camponuevo_session');
-                    
-                    // Dispatch event for UI update
-                    document.dispatchEvent(new CustomEvent('userLoggedOut'));
-                }
-                
-                if (event === 'EMAIL_VERIFICATION' || (event === 'USER_UPDATED' && session?.user?.email_confirmed_at)) {
-                    console.log('Email verified!');
-                    alert('¡Tu correo electrónico ha sido verificado! Ya puedes iniciar sesión.');
-                    
-                    // Dispatch event for UI update
-                    document.dispatchEvent(new CustomEvent('emailVerified'));
-                }
-            });
-        }
-        
-        // Start listening after a short delay to ensure Supabase is loaded
-        setTimeout(setupAuthListener, 500);
-    });
-}

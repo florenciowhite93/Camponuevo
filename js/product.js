@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const productTitle = document.getElementById('productTitle');
     const productLaboratories = document.getElementById('productLaboratories');
     const productPrice = document.getElementById('productPrice');
-    const productDescription = document.getElementById('productAction');
+    const productDescription = document.getElementById('productDescription');
     const productVol = document.getElementById('productVol');
     const productBreeds = document.getElementById('productBreeds');
     const productDrugs = document.getElementById('productDrugs');
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             ).join('');
         }
         productPrice.textContent = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(product.price);
-        productDescription.textContent = product.action || product.description || '';
+        productDescription.textContent = product.description;
         productVol.textContent = product.volumeWeight || '--';
         productBreeds.textContent = (product.animalBreeds || []).join(', ');
 
@@ -85,14 +85,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (doseSection) doseSection.classList.add('hidden');
         }
 
-        // Indications: hide if empty
-        if (product.indications) {
-            document.getElementById('productIndications').textContent = product.indications;
-        } else {
-            const indicationsSection = document.getElementById('indicationsSection');
-            if (indicationsSection) indicationsSection.classList.add('hidden');
-        }
-
         // Drugs: render as bulleted list items - handle both array and string
         if (product.drugs) {
             let drugItems;
@@ -100,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 drugItems = product.drugs.map(d => d.trim()).filter(d => d.length > 1);
             } else {
                 drugItems = product.drugs
-                    .split(/\n|\r/g)
+                    .split(/[;,](?![^(]*\))/g)
                     .map(d => d.trim())
                     .filter(d => d.length > 1);
             }
@@ -126,15 +118,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         productImage.src = getImageUrl(product.image);
-
-        // Labels
-        const productLabels = document.getElementById('productLabels');
-        if (productLabels && product.labels && product.labels.length > 0) {
-            productLabels.innerHTML = product.labels.map(label => {
-                const color = typeof getColorForLabel === 'function' ? getColorForLabel(label) : '#2d5a27';
-                return `<span class="text-white text-[11px] font-black px-3 py-1 rounded-full shadow-lg uppercase tracking-tighter" style="background-color: ${color}">${label}</span>`;
-            }).join('');
-        }
 
         // Animal SVG icons - use shared animalIcons.js
         if (typeof getAnimalIconsHtml === 'function') {
@@ -177,7 +160,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // WhatsApp Link
         const waMessage = encodeURIComponent(`Hola Camponuevo, me interesa el producto: *${product.title}* de ${product.laboratory}.`);
-        btnWhatsApp.href = `https://wa.me/5491144096789?text=${waMessage}`;
+        btnWhatsApp.href = `https://wa.me/5491112345678?text=${waMessage}`;
 
         // Add to cart click
         btnAddToCart.addEventListener('click', () => {

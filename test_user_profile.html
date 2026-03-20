@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test User Profile</title>
+</head>
+<body>
+    <h1>Test de Perfil de Usuario</h1>
+    <div id="results"></div>
+    
+    <script src="js/data.js"></script>
+    <script>
+        const results = document.getElementById('results');
+        
+        // Test 1: Register a test user
+        async function testRegister() {
+            const result = await registerUser({
+                name: "Usuario Test",
+                email: "test@example.com",
+                password: "test123"
+            });
+            
+            if (result.success) {
+                return "✓ Registro exitoso";
+            } else {
+                return "✗ Registro fallido: " + result.message;
+            }
+        }
+        
+        // Test 2: Update user profile
+        async function testUpdateProfile() {
+            const user = getCurrentUser();
+            if (!user) {
+                return "✗ No hay usuario logueado";
+            }
+            
+            const result = await updateUserProfile(user.id, {
+                phone: "+54 11 1234-5678",
+                location: "Establecimiento Test",
+                identification: "20-12345678-9"
+            });
+            
+            if (result.success) {
+                return "✓ Perfil actualizado exitosamente";
+            } else {
+                return "✗ Falló la actualización: " + result.message;
+            }
+        }
+        
+        // Test 3: Set security question
+        async function testSecurityQuestion() {
+            const user = getCurrentUser();
+            if (!user) {
+                return "✗ No hay usuario logueado";
+            }
+            
+            const result = await updateUserProfile(user.id, {
+                securityQuestion: "¿Nombre de tu primera mascota?",
+                securityAnswer: "Firulais"
+            });
+            
+            if (result.success) {
+                return "✓ Pregunta de seguridad configurada";
+            } else {
+                return "✗ Falló la configuración: " + result.message;
+            }
+        }
+        
+        // Run tests
+        async function runTests() {
+            let html = '<h2>Resultados de las pruebas:</h2><ul>';
+            
+            const test1 = await testRegister();
+            html += `<li>${test1}</li>`;
+            
+            const test2 = await testUpdateProfile();
+            html += `<li>${test2}</li>`;
+            
+            const test3 = await testSecurityQuestion();
+            html += `<li>${test3}</li>`;
+            
+            html += '</ul>';
+            results.innerHTML = html;
+        }
+        
+        runTests();
+    </script>
+</body>
+</html>

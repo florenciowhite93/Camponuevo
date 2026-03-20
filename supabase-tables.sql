@@ -1,17 +1,7 @@
 -- =============================================================================
--- ⚠️ ADVERTENCIA: ARCHIVO DEPRECADO
+-- SQL PARA CREAR TABLAS EN SUPABASE
 -- =============================================================================
--- ESTE ARCHIVO CONTIENE POLÍTICAS RLS PERMISIVAS Y NO DEBE EJECUTARSE.
--- USA `supabase/sql/security.sql` PARA POLÍTICAS RLS RESTRICTIVAS.
--- 
--- Este archivo solo crea las TABLAS, NO las políticas de seguridad.
--- =============================================================================
-
--- =============================================================================
--- SQL PARA CREAR TABLAS EN SUPABASE (DEFINICIONES SOLO)
--- =============================================================================
--- IMPORTANTE: NO crear políticas RLS desde este archivo.
--- Usar supabase/sql/security.sql para políticas restrictivas.
+-- Ejecuta este código en el Editor SQL de Supabase (https://supabase.com)
 -- =============================================================================
 
 -- Tabla: products (Productos)
@@ -20,8 +10,7 @@ CREATE TABLE IF NOT EXISTS products (
     title TEXT,
     price NUMERIC,
     laboratory TEXT,
-    action TEXT,
-    indications TEXT,
+    description TEXT,
     subcategory TEXT,
     subcategories TEXT[],
     animalbreeds TEXT[],
@@ -63,8 +52,7 @@ CREATE TABLE IF NOT EXISTS labels (
 CREATE TABLE IF NOT EXISTS home_categories (
     id TEXT PRIMARY KEY,
     categoryid TEXT,
-    position INTEGER,
-    svg TEXT
+    position INTEGER
 );
 
 -- Tabla: orders (Pedidos)
@@ -72,22 +60,8 @@ CREATE TABLE IF NOT EXISTS orders (
     id TEXT PRIMARY KEY,
     userid TEXT,
     products TEXT,
-    customer_info TEXT,
-    subtotal NUMERIC,
-    iva NUMERIC,
     total NUMERIC,
     status TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Tabla: contact_messages (Mensajes de contacto)
-CREATE TABLE IF NOT EXISTS contact_messages (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    email TEXT NOT NULL,
-    phone TEXT,
-    subject TEXT,
-    message TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -98,24 +72,8 @@ CREATE TABLE IF NOT EXISTS users (
     name TEXT,
     phone TEXT,
     address TEXT,
-    password_hash TEXT,
-    security_question TEXT,
-    security_answer_hash TEXT,
-    location TEXT,
-    identification TEXT,
-    email_verified BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    last_login TIMESTAMP WITH TIME ZONE
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
--- Agregar columnas si la tabla ya existe (para migraciones)
--- ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
--- ALTER TABLE users ADD COLUMN IF NOT EXISTS security_question TEXT;
--- ALTER TABLE users ADD COLUMN IF NOT EXISTS security_answer_hash TEXT;
--- ALTER TABLE users ADD COLUMN IF NOT EXISTS location TEXT;
--- ALTER TABLE users ADD COLUMN IF NOT EXISTS identification TEXT;
--- ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE;
--- ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false;
 
 -- =============================================================================
 -- HABILITAR ROW LEVEL SECURITY (RLS)
@@ -171,19 +129,6 @@ CREATE POLICY "Allow delete labels" ON labels FOR DELETE USING (true);
 CREATE POLICY "Allow delete home_categories" ON home_categories FOR DELETE USING (true);
 CREATE POLICY "Allow delete orders" ON orders FOR DELETE USING (true);
 CREATE POLICY "Allow delete users" ON users FOR DELETE USING (true);
-
--- =============================================================================
--- ACTUALIZACIÓN: Agregar columnas action e indications (si no existen)
--- Ejecutar solo si las columnas ya existen en la tabla
--- =============================================================================
--- ALTER TABLE products ADD COLUMN IF NOT EXISTS action TEXT;
--- ALTER TABLE products ADD COLUMN IF NOT EXISTS indications TEXT;
-
--- =============================================================================
--- MIGRACIÓN: Agregar columna svg a home_categories (si no existe)
--- Ejecutar en el Editor SQL de Supabase si la tabla ya existe
--- =============================================================================
-ALTER TABLE home_categories ADD COLUMN IF NOT EXISTS svg TEXT;
 
 -- =============================================================================
 -- VERIFICACIÓN

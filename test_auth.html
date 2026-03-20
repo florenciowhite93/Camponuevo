@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Auth</title>
+</head>
+<body>
+    <h1>Test de Autenticación</h1>
+    <div id="results"></div>
+    
+    <script src="js/data.js"></script>
+    <script>
+        const results = document.getElementById('results');
+        
+        // Test 1: Check if functions exist
+        const functions = ['registerUser', 'loginUser', 'logoutUser', 'getCurrentUser', 'getSecurityQuestion', 'validateSecurityAnswer', 'resetPasswordWithSecurity', 'updateUserProfile', 'changePassword', 'saveOrder', 'getOrdersByUser'];
+        
+        let html = '<h2>Test de Funciones:</h2><ul>';
+        functions.forEach(fn => {
+            const exists = typeof window[fn] === 'function';
+            html += `<li style="color: ${exists ? 'green' : 'red'}">${fn}: ${exists ? '✓' : '✗'}</li>`;
+        });
+        html += '</ul>';
+        
+        // Test 2: Check localStorage functions
+        html += '<h2>Test de LocalStorage:</h2><ul>';
+        const storageFunctions = ['initUsers', 'getUsers', 'saveUsers', 'initOrders', 'getOrders', 'saveOrders'];
+        storageFunctions.forEach(fn => {
+            const exists = typeof window[fn] === 'function';
+            html += `<li style="color: ${exists ? 'green' : 'red'}">${fn}: ${exists ? '✓' : '✗'}</li>`;
+        });
+        html += '</ul>';
+        
+        results.innerHTML = html;
+    </script>
+</body>
+</html>
