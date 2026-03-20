@@ -301,12 +301,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('loginUser').value.trim();
+        const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPass').value;
-        const rememberMe = document.getElementById('rememberMe')?.checked || false;
 
         if (!email || !password) {
-            loginError.textContent = 'Por favor ingresa email y contraseña';
+            document.getElementById('loginErrorText').textContent = 'Por favor ingresa email y contraseña';
             loginError.classList.remove('hidden');
             return;
         }
@@ -314,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Validar formato de email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            loginError.textContent = 'Por favor ingresa un email válido';
+            document.getElementById('loginErrorText').textContent = 'Por favor ingresa un email válido';
             loginError.classList.remove('hidden');
             return;
         }
@@ -322,10 +321,10 @@ document.addEventListener('DOMContentLoaded', () => {
         loginError.classList.add('hidden');
         
         // Mostrar loading
-        const submitBtn = loginForm.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
+        const submitBtn = document.getElementById('btnLogin');
+        const btnLoginText = document.getElementById('btnLoginText');
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Verificando...';
+        btnLoginText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Verificando...';
 
         try {
             const result = await loginUser(email, password);
@@ -336,22 +335,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     checkAuth();
                 } else {
                     // Es usuario pero no admin
-                    loginError.textContent = 'No tienes permisos de administrador';
+                    document.getElementById('loginErrorText').textContent = 'No tienes permisos de administrador';
                     loginError.classList.remove('hidden');
                     await logoutUser();
                 }
             } else {
-                loginError.textContent = result.error || 'Credenciales incorrectas';
+                document.getElementById('loginErrorText').textContent = result.error || 'Credenciales incorrectas';
                 loginError.classList.remove('hidden');
                 document.getElementById('loginPass').value = '';
             }
         } catch (err) {
             console.error('Error en login:', err);
-            loginError.textContent = 'Error al intentar iniciar sesión';
+            document.getElementById('loginErrorText').textContent = 'Error de conexión. Intenta de nuevo.';
             loginError.classList.remove('hidden');
         } finally {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
+            btnLoginText.textContent = 'Ingresar al Panel';
         }
     });
 
