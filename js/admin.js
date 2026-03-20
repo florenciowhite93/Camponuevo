@@ -58,7 +58,9 @@ window.undoLastAction = function() {
 document.addEventListener('DOMContentLoaded', () => {
     try {
     // Initialize categories (migrate if needed)
-    migrateSubCategoriesToCategories();
+    if (typeof migrateSubCategoriesToCategories === 'function') {
+        migrateSubCategoriesToCategories();
+    }
     
     // Elements
     const productsTableBody = document.getElementById('productsTableBody');
@@ -752,7 +754,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Category UI Management ---
     async function renderCategories() {
         if (!catsContainer) return;
-        migrateSubCategoriesToCategories();
+        if (typeof migrateSubCategoriesToCategories === 'function') {
+            migrateSubCategoriesToCategories();
+        }
         const categories = await getCategories();
         catsContainer.innerHTML = '';
         
