@@ -251,46 +251,131 @@ document.addEventListener('DOMContentLoaded', () => {
         '#6366F1'  // Indigo
     ];
 
-    // Authentication Logic
-    function checkAuth() {
-        const isLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true' || 
-                          localStorage.getItem('isAdminRemembered') === 'true';
-        
-        if (isLoggedIn) {
-            if (loginScreen) loginScreen.classList.add('hidden');
-            if (adminApp) adminApp.classList.remove('hidden');
-            initAdminPanel();
-        } else {
+    // Authentication Logic usando Supabase Auth
+    async function checkAuth() {
+        if (!isSupabaseAvailable()) {
+            console.error('Supabase no disponible');
+            if (loginScreen) loginScreen.classList.remove('hidden');
+            if (adminApp) adminApp.classList.add('hidden');
+            return;
+        }
+
+        try {
+            // Verificar sesión actual
+            const { data: { session } } = await window.supabase.auth.getSession();
+            
+            if (session?.user) {
+                // Verificar si es admin
+                const isAdmin = await checkIfAdmin(session.user.id);
+                
+                if (isAdmin) {
+                    // Guardar info del admin
+                    sessionStorage.setItem('adminUserId', session.user.id);
+                    sessionStorage.setItem('isAdminLoggedIn', 'true');
+                    
+                    if (loginScreen) loginScreen.classList.add('hidden');
+                    if (adminApp) adminApp.classList.remove('hidden');
+                    initAdminPanel();
+                } else {
+                    // Es usuario pero no admin
+                    loginError.textContent = 'No tienes permisos de administrador';
+                    loginError.classList.remove('hidden');
+                    if (loginScreen) loginScreen.classList.remove('hidden');
+                    if (adminApp) adminApp.classList.add('hidden');
+                }
+            } else {
+                // No hay sesión
+                sessionStorage.removeItem('adminUserId');
+                sessionStorage.removeItem('isAdminLoggedIn');
+                if (loginScreen) loginScreen.classList.remove('hidden');
+                if (adminApp) adminApp.classList.add('hidden');
+            }
+        } catch (err) {
+            console.error('Error verificando auth:', err);
             if (loginScreen) loginScreen.classList.remove('hidden');
             if (adminApp) adminApp.classList.add('hidden');
         }
     }
 
-    loginForm.addEventListener('submit', (e) => {
+    loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const user = document.getElementById('loginUser').value;
-        const pass = document.getElementById('loginPass').value;
-        const rememberMe = document.getElementById('rememberMe').checked;
+        const email = document.getElementById('loginUser').value.trim();
+        const password = document.getElementById('loginPass').value;
+        const rememberMe = document.getElementById('rememberMe')?.checked || false;
 
-        // Hardcoded credentials for simulation (as requested)
-        if (user === 'admin' && pass === '1234') {
-            sessionStorage.setItem('isAdminLoggedIn', 'true');
-            if (rememberMe) {
-                localStorage.setItem('isAdminRemembered', 'true');
-            }
-            loginError.classList.add('hidden');
-            checkAuth();
-        } else {
+        if (!email || !password) {
+            loginError.textContent = 'Por favor ingresa email y contraseña';
             loginError.classList.remove('hidden');
-            document.getElementById('loginPass').value = ''; // clear password
+            return;
+        }
+
+        // Validar formato de email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            loginError.textContent = 'Por favor ingresa un email válido';
+            loginError.classList.remove('hidden');
+            return;
+        }
+
+        loginError.classList.add('hidden');
+        
+        // Mostrar loading
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Verificando...';
+
+        try {
+            const result = await loginUser(email, password);
+
+            if (result.success) {
+                if (result.isAdmin) {
+                    // Es admin, mostrar panel
+                    checkAuth();
+                } else {
+                    // Es usuario pero no admin
+                    loginError.textContent = 'No tienes permisos de administrador';
+                    loginError.classList.remove('hidden');
+                    await logoutUser();
+                }
+            } else {
+                loginError.textContent = result.error || 'Credenciales incorrectas';
+                loginError.classList.remove('hidden');
+                document.getElementById('loginPass').value = '';
+            }
+        } catch (err) {
+            console.error('Error en login:', err);
+            loginError.textContent = 'Error al intentar iniciar sesión';
+            loginError.classList.remove('hidden');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
         }
     });
 
+    // Listener para cambios en autenticación
+    if (isSupabaseAvailable()) {
+        window.supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth state changed:', event);
+            if (event === 'SIGNED_OUT') {
+                sessionStorage.removeItem('adminUserId');
+                sessionStorage.removeItem('isAdminLoggedIn');
+            }
+        });
+    }
+
     if (btnLogout) {
-        btnLogout.addEventListener('click', () => {
+        btnLogout.addEventListener('click', async () => {
+            btnLogout.disabled = true;
+            btnLogout.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>';
+            
+            await logoutUser();
+            
+            sessionStorage.removeItem('adminUserId');
             sessionStorage.removeItem('isAdminLoggedIn');
             localStorage.removeItem('isAdminRemembered');
-            window.location.reload(); // Reload to reset state and show login
+            
+            window.location.reload();
         });
     }
 

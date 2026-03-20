@@ -4,48 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nosotros | Contacto - Camponuevo</title>
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        img-src 'self' data: https: blob:;
+        font-src 'self' https://fonts.gstatic.com;
+        connect-src 'self' https://itlczokcdxgzgqrortpm.supabase.co https://*.supabase.co https://*.supabase.com;
+        frame-ancestors 'none';
+        form-action 'self';
+        base-uri 'self';
+    ">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
     <!-- Head -->
     <link rel="icon" type="image/svg+xml" href="img/Asset 7.svg">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#2d5a27',
-                        secondary: '#4caf50',
-                        accent: '#8bc34a',
-                        light: '#f1f8e9',
-                        dark: '#1b5e20'
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f8fafc; scroll-behavior: smooth; }
-        .glass-header {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
-        }
-        .cart-icon { position: relative; }
-        .cart-count {
-            position: absolute; top: -8px; right: -8px;
-            background: linear-gradient(135deg, #ff9800, #ff5722);
-            color: white; border-radius: 50%; width: 20px; height: 20px;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 11px; font-weight: bold; box-shadow: 0 2px 5px rgba(255, 87, 34, 0.4);
-        }
-    </style>
-</head>
-<body class="flex flex-col min-h-screen">
-    <div id="site-header-placeholder"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
+    <script src="js/validation.js"></script>
     <script src="components/header_content.js"></script>
     <script src="js/data.js"></script>
     <script src="js/header.js"></script>
@@ -279,11 +258,28 @@
                     const subject = document.getElementById('contactSubject').value.trim();
                     const message = document.getElementById('contactMessage').value.trim();
                     
-                    // Validate
-                    if (!name || !email || !message) {
-                        showStatus('Por favor completa los campos obligatorios.', 'error');
+                    // Validate using validation module
+                    const validation = ContactFormValidation.validate({
+                        name: name,
+                        email: email,
+                        phone: phone,
+                        subject: subject,
+                        message: message
+                    });
+                    
+                    if (!validation.valid) {
+                        showStatus(validation.errors.join('. '), 'error');
                         return;
                     }
+                    
+                    // Sanitize data
+                    const sanitizedData = ContactFormValidation.sanitize({
+                        name: name,
+                        email: email,
+                        phone: phone,
+                        subject: subject,
+                        message: message
+                    });
                     
                     // Show loading state
                     submitBtn.disabled = true;
@@ -291,14 +287,14 @@
                     statusDiv.classList.add('hidden');
                     
                     try {
-                        const response = await fetch('https://itlczokcdxgzgqrortpm.supabase.co/functions/v1/contact-form', {
+                        const response = await fetch(SUPABASE_URL + '/functions/v1/contact-form', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0bGN6b2tjZHhnemdxcm9ydHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MDk1MzcsImV4cCI6MjA4OTE4NTUzN30.4j9YbZbeiOJQ6xnoyVjdW8xlv8qsrZnqgmJ3E6jkdCg',
-                                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0bGN6b2tjZHhnemdxcm9ydHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MDk1MzcsImV4cCI6MjA4OTE4NTUzN30.4j9YbZbeiOJQ6xnoyVjdW8xlv8qsrZnqgmJ3E6jkdCg'
+                                'apikey': SUPABASE_ANON_KEY,
+                                'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
                             },
-                            body: JSON.stringify({ name, email, phone, subject, message })
+                            body: JSON.stringify(sanitizedData)
                         });
                         
                         const result = await response.json();

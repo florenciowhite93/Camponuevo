@@ -1,7 +1,17 @@
 -- =============================================================================
--- SQL PARA CREAR TABLAS EN SUPABASE
+-- ⚠️ ADVERTENCIA: ARCHIVO DEPRECADO
 -- =============================================================================
--- Ejecuta este código en el Editor SQL de Supabase (https://supabase.com)
+-- ESTE ARCHIVO CONTIENE POLÍTICAS RLS PERMISIVAS Y NO DEBE EJECUTARSE.
+-- USA `supabase/sql/security.sql` PARA POLÍTICAS RLS RESTRICTIVAS.
+-- 
+-- Este archivo solo crea las TABLAS, NO las políticas de seguridad.
+-- =============================================================================
+
+-- =============================================================================
+-- SQL PARA CREAR TABLAS EN SUPABASE (DEFINICIONES SOLO)
+-- =============================================================================
+-- IMPORTANTE: NO crear políticas RLS desde este archivo.
+-- Usar supabase/sql/security.sql para políticas restrictivas.
 -- =============================================================================
 
 -- Tabla: products (Productos)
