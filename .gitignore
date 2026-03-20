@@ -4,10 +4,12 @@ Thumbs.db
 
 # Archivos de logs
 *.log
+logs/
 
 # Archivos de configuración locales
 .env
 .env.local
+.env.production
 
 # Carpetas de IDE
 .vscode/
@@ -16,15 +18,40 @@ Thumbs.db
 # Archivos temporales
 *.tmp
 *.temp
+temp_*
+test_*
 
-# Dependencias (si se añaden en el futuro)
+# Dependencias
 node_modules/
 package-lock.json
 
-# Archivos de construcción (si se añaden en el futuro)
+# Archivos de construcción
 dist/
 build/
 
-# Archivos de datos sensibles (ej. copias de seguridad)
+# Archivos de datos sensibles
 *.backup
 *.bak
+*.sql
+
+# Documentación con secrets (no commitear)
+*SEGURIDAD*
+*IMPLEMENTACION*
+
+# Scripts locales
+scripts/*.ps1
+scripts/*.bat
+scripts/*.sh
+
+# Archivos de deploy
+deploy*.bat
+deploy*.sh
+abrir-*.bat
+fix-*.bat
+reset-*.bat
+
+# Vercel local
+.vercel/
+
+# Archivos de Supabase locales
+.supabase/

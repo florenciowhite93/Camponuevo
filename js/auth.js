@@ -370,6 +370,14 @@ async function getCurrentUser() {
     }
 }
 
+// ============ VERIFICAR SI ESTÁ AUTENTICADO ============
+function isAuthenticated() {
+    if (!isSupabaseAvailable()) return false;
+    
+    const session = window.supabase.auth.session();
+    return session?.user !== null;
+}
+
 // ============ VALIDACIONES ============
 function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

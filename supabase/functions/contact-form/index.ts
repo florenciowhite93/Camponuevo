@@ -18,6 +18,11 @@ interface ContactFormData {
   message: string
 }
 
+// Rate limiting en memoria
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minuto
+const RATE_LIMIT_MAX_REQUESTS = 5; // Máximo 5 requests por minuto
+
 function sanitizeString(str: string): string {
   if (typeof str !== 'string') return '';
   
@@ -36,14 +41,22 @@ function validateEmail(email: string): boolean {
 }
 
 function validateRateLimit(clientIp: string): { allowed: boolean; retryAfter?: number } {
-  // Implementación simple de rate limiting en memoria
-  // Para producción, usar Redis o similar
   const now = Date.now();
-  const windowMs = 60 * 1000; // 1 minuto
-  const maxRequests = 5; // Máximo 5 requests por minuto
+  const normalizedIp = clientIp.split(',')[0].trim(); // Tomar primera IP si hay varias
   
-  // Esta es una implementación básica
-  // En producción, usar Supabase Edge Function quotas o Redis
+  const record = rateLimitMap.get(normalizedIp);
+  
+  if (!record || now > record.resetAt) {
+    rateLimitMap.set(normalizedIp, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true };
+  }
+  
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    const retryAfter = Math.ceil((record.resetAt - now) / 1000);
+    return { allowed: false, retryAfter };
+  }
+  
+  record.count++;
   return { allowed: true };
 }
 
